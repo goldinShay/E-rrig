@@ -1,0 +1,32 @@
+# Java build artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+target/
+.mvn/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Spring Boot config (protect secrets!)
+application.properties
+application.yml
+
+# PostgreSQL dumps
+*.sql
+
+# Environment files
+.env
