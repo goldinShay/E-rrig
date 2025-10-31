@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: errig
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/errig_db
+    username: errig_user
+    password: "IkHouVanKasiopea69"
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  main:
+    allow-bean-definition-overriding: true
+
+  task:
+    scheduling:
+      pool:
+        size: 2
+
+logging:
+  level:
+    org.errig: DEBUG
+    org.springframework: INFO
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
