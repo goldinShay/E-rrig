@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.UUID;
+
 
 @Service
 public class SensorLogger {
@@ -20,26 +22,27 @@ public class SensorLogger {
     @Scheduled(fixedRate = 60000) // every 60 seconds
     public void logSensorData() {
         SensorLog log = new SensorLog();
+        log.setMessageId(UUID.randomUUID().toString());
         log.setTimestamp(LocalDateTime.now());
 
-        // Simulated values
-        log.setGrowBloom(random.nextBoolean());
-        log.setLightsOn(random.nextBoolean());
-        log.setPumpActive(random.nextBoolean());
-        log.setFanActive(random.nextBoolean());
-        log.setBlowerActive(random.nextBoolean());
-        log.setHeaterActive(random.nextBoolean());
+        log.setGrowBloom(Math.random() < 0.5);
+        log.setLightsOn(Math.random() < 0.5);
+        log.setPumpActive(Math.random() < 0.5);
+        log.setFanActive(Math.random() < 0.5);
+        log.setBlowerActive(Math.random() < 0.5);
+        log.setHeaterActive(Math.random() < 0.5);
 
-        log.setPowerUse(random.nextDouble() * 100); // watts
-        log.setAirTemp(20 + random.nextDouble() * 5); // °C
-        log.setAirHum(40 + random.nextDouble() * 20); // %
-        log.setAirPres(1000 + random.nextDouble() * 20); // hPa
-        log.setCO2ppm(400 + random.nextDouble() * 100); // ppm
+        log.setPowerUse(Math.random() * 500);
+        log.setAirTemp(18 + Math.random() * 10);
+        log.setAirHum(30 + Math.random() * 40);
+        log.setAirPres(950 + Math.random() * 50);
+        log.setCO2ppm(400 + Math.random() * 200);
 
-        log.setWaterTemp(18 + random.nextDouble() * 4); // °C
-        log.setWaterPH(5.5 + random.nextDouble() * 2); // pH
-        log.setWaterEC(1.0 + random.nextDouble() * 1.5); // mS/cm
-        log.setWaterLevel(50 + random.nextDouble() * 50); // %
+        log.setWaterTemp(18 + Math.random() * 5);
+        log.setWaterPH(5.5 + Math.random() * 2);
+        log.setWaterEC(500 + Math.random() * 300);
+        log.setWaterLevel(Math.random() * 100);
+
 
         repository.save(log);
     }

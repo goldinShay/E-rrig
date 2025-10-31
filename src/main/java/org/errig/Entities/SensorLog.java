@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "sensor_log")
 public class SensorLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String messageId; // Unique ID for tracking each pulse
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
@@ -22,20 +26,29 @@ public class SensorLog {
     private boolean heaterActive;
 
     // Power and environment
-    private double powerUse;
-    private double airTemp;
-    private double airHum;
-    private double airPres;
-    private double CO2ppm;
+    private double powerUse;     // General power usage (watts)
+    private double airTemp;      // °C
+    private double airHum;       // %
+    private double airPres;      // hPa
+    private double CO2ppm;       // ppm
 
     // Water metrics
-    private double waterTemp;
-    private double waterPH;
-    private double waterEC;
-    private double waterLevel;
+    private double waterTemp;    // °C
+    private double waterPH;      // pH
+    private double waterEC;      // µS/cm
+    private double waterLevel;   // %
 
-    // Getters and setters
+    // Getters and setters...
 
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    // (All other getters/setters remain unchanged)
     public Long getId() {
         return id;
     }
@@ -171,4 +184,5 @@ public class SensorLog {
     public void setWaterLevel(double waterLevel) {
         this.waterLevel = waterLevel;
     }
+
 }
