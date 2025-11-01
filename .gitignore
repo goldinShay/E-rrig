@@ -30,3 +30,6 @@ application.yml
 
 # Environment files
 .env
+
+# SSL keystore
+src/main/resources/keystore.p12
