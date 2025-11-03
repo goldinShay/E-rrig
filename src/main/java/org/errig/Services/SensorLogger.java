@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
 
-
 @Service
 public class SensorLogger {
 
@@ -19,31 +18,39 @@ public class SensorLogger {
 
     private final Random random = new Random();
 
-    @Scheduled(fixedRate = 60000) // every 60 seconds
+    @Scheduled(fixedRate = 300000) // every 300 seconds (5min)
     public void logSensorData() {
+        // Get the last message number and increment
+        Long lastNumber = repository.findMaxMessageNumber();
+        Long nextNumber = (lastNumber != null ? lastNumber : 0) + 1;
+
         SensorLog log = new SensorLog();
         log.setMessageId(UUID.randomUUID().toString());
+        log.setMessageNumber(nextNumber);
         log.setTimestamp(LocalDateTime.now());
 
-        log.setGrowBloom(Math.random() < 0.5);
-        log.setLightsOn(Math.random() < 0.5);
-        log.setPumpActive(Math.random() < 0.5);
-        log.setFanActive(Math.random() < 0.5);
-        log.setBlowerActive(Math.random() < 0.5);
-        log.setHeaterActive(Math.random() < 0.5);
+        log.setGrowBloom(random.nextBoolean());
+        log.setLightsOn(random.nextBoolean());
+        log.setPumpActive(random.nextBoolean());
+        log.setFanActive(random.nextBoolean());
+        log.setBlowerActive(random.nextBoolean());
+        log.setHeaterActive(random.nextBoolean());
 
-        log.setPowerUse(Math.random() * 500);
-        log.setAirTemp(18 + Math.random() * 10);
-        log.setAirHum(30 + Math.random() * 40);
-        log.setAirPres(950 + Math.random() * 50);
-        log.setCO2ppm(400 + Math.random() * 200);
+        log.setPowerUse(round(random.nextDouble() * 500));
+        log.setAirTemp(round(18 + random.nextDouble() * 10));
+        log.setAirHum(round(30 + random.nextDouble() * 40));
+        log.setAirPres(round(950 + random.nextDouble() * 50));
+        log.setCO2ppm(round(400 + random.nextDouble() * 200));
 
-        log.setWaterTemp(18 + Math.random() * 5);
-        log.setWaterPH(5.5 + Math.random() * 2);
-        log.setWaterEC(500 + Math.random() * 300);
-        log.setWaterLevel(Math.random() * 100);
-
+        log.setWaterTemp(round(18 + random.nextDouble() * 5));
+        log.setWaterPH(round(5.5 + random.nextDouble() * 2));
+        log.setWaterEC(round(500 + random.nextDouble() * 300));
+        log.setWaterLevel(round(random.nextDouble() * 100));
 
         repository.save(log);
+    }
+
+    private double round(double value) {
+        return Math.round(value * 10.0) / 10.0;
     }
 }

@@ -14,6 +14,9 @@ public class SensorLog {
     @Column(nullable = false, unique = true)
     private String messageId; // Unique ID for tracking each pulse
 
+    @Column(name = "message_number", nullable = true, unique = true)
+    private Long messageNumber; // Sequential, human-readable number
+
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
 
@@ -26,19 +29,27 @@ public class SensorLog {
     private boolean heaterActive;
 
     // Power and environment
-    private double powerUse;     // General power usage (watts)
-    private double airTemp;      // °C
-    private double airHum;       // %
-    private double airPres;      // hPa
-    private double CO2ppm;       // ppm
+    private double powerUse;
+    private double airTemp;
+    private double airHum;
+    private double airPres;
+    private double CO2ppm;
 
     // Water metrics
-    private double waterTemp;    // °C
-    private double waterPH;      // pH
-    private double waterEC;      // µS/cm
-    private double waterLevel;   // %
+    private double waterTemp;
+    private double waterPH;
+    private double waterEC;
+    private double waterLevel;
 
-    // Getters and setters...
+    // Getters and setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getMessageId() {
         return messageId;
@@ -48,13 +59,12 @@ public class SensorLog {
         this.messageId = messageId;
     }
 
-    // (All other getters/setters remain unchanged)
-    public Long getId() {
-        return id;
+    public Long getMessageNumber() {
+        return messageNumber;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setMessageNumber(Long messageNumber) {
+        this.messageNumber = messageNumber;
     }
 
     public LocalDateTime getTimestamp() {
@@ -184,5 +194,4 @@ public class SensorLog {
     public void setWaterLevel(double waterLevel) {
         this.waterLevel = waterLevel;
     }
-
 }
