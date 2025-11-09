@@ -47,7 +47,29 @@
         margin-bottom: 20px;
     }
 
-    /* Ticker styles — single-line scroll */
+    .mode-button {
+        background-color: #333;
+        color: #eee;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .mode-button:hover {
+        background-color: #555;
+    }
+
+    .mode-button.active {
+        background-color: #4CAF50;
+        color: #fff;
+    }
+
+    .device-control {
+        margin-bottom: 20px;
+    }
+
     .ticker {
         position: fixed;
         bottom: 0;
@@ -61,7 +83,6 @@
         align-items: center;
         z-index: 10;
     }
-
 
     @keyframes scroll-left {
         0% { transform: translateX(0); }
@@ -94,104 +115,119 @@
             </div>
         </div>
 
+        <!-- Actuator + Cycle Mode Controls -->
+        <!-- 🌿 System State Form -->
+        <!-- 💡 Lights Control -->
+        <!-- 💡 LED Lights Control -->
+        <div th:each="light : ${state.ledLights}" class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <form th:action="@{/dashboard/updateLight}" method="post" style="display: flex; align-items: center; gap: 10px;">
+                <input type="hidden" name="uniqueId" th:value="${light.deviceID}" />
+                <label th:text="${light.name}">Light Name</label>
 
-        <div class="device-control">
-            <label>Lights:</label>
-            <div class="mode-switch">
-                <button type="submit" name="lightsMode" value="Off" th:classappend="${state.lightsMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="lightsMode" value="On" th:classappend="${state.lightsMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="lightsMode" value="Auto" th:classappend="${state.lightsMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.lightsOn} ? 'status-light green' : 'status-light red'"></span>
+                <button type="submit" name="mode" value="Off"
+                        class="mode-button"
+                        th:classappend="${!light.on} ? 'active'">Off</button>
+
+                <button type="submit" name="mode" value="On"
+                        class="mode-button"
+                        th:classappend="${light.on} ? 'active'">On</button>
+
+                <button type="button"
+                        class="mode-button"
+                        th:disabled="${!state.growCycle and !state.bloomCycle}"
+                        th:title="${!state.growCycle and !state.bloomCycle} ? 'Must start a cycle first' : ''"
+                        data-device-id="${light.deviceID}"
+                        onclick="openPasswordModalFromButton(this)"
+                        th:classappend="${light.mode == 'Auto'} ? 'active'">Auto</button>
+
+                <span th:classappend="${light.on} ? 'status-light green' : 'status-light red'"></span>
+            </form>
         </div>
 
-        <div class="device-control">
-            <label>Pumps:</label>
-            <div class="mode-switch">
-                <button type="submit" name="pumpsMode" value="Off" th:classappend="${state.pumpsMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="pumpsMode" value="On" th:classappend="${state.pumpsMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="pumpsMode" value="Auto" th:classappend="${state.pumpsMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.pumpsOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
+        <!-- 🌱 Cycle Mode Selection -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Cycle:</label>
+            <div class="mode-switch" style="display: flex; gap: 10px;">
+                <form th:action="@{/dashboard/setCycle}" method="post">
+                    <button type="submit" name="growCycle" value="true"
+                            class="mode-button"
+                            th:classappend="${state.growCycle} ? 'active'">Start Grow</button>
+                </form>
 
-        <div class="device-control">
-            <label>Blowers:</label>
-            <div class="mode-switch">
-                <button type="submit" name="blowersMode" value="Off" th:classappend="${state.blowersMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="blowersMode" value="On" th:classappend="${state.blowersMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="blowersMode" value="Auto" th:classappend="${state.blowersMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.blowersOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
+                <form th:action="@{/dashboard/setCycle}" method="post">
+                    <button type="submit" name="bloomCycle" value="true"
+                            class="mode-button"
+                            th:classappend="${state.bloomCycle} ? 'active'">Start Bloom</button>
+                </form>
 
-        <div class="device-control">
-            <label>Fans:</label>
-            <div class="mode-switch">
-                <button type="submit" name="fansMode" value="Off" th:classappend="${state.fansMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="fansMode" value="On" th:classappend="${state.fansMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="fansMode" value="Auto" th:classappend="${state.fansMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.fansOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
-
-        <div class="device-control">
-            <label>Fog Inducer:</label>
-            <div class="mode-switch">
-                <button type="submit" name="fogInducerMode" value="Off" th:classappend="${state.fogInducerMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="fogInducerMode" value="On" th:classappend="${state.fogInducerMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="fogInducerMode" value="Auto" th:classappend="${state.fogInducerMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.fogInducerOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
-
-        <div class="device-control">
-            <label>Heater:</label>
-            <div class="mode-switch">
-                <button type="submit" name="heaterMode" value="Off" th:classappend="${state.heaterMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="heaterMode" value="On" th:classappend="${state.heaterMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="heaterMode" value="Auto" th:classappend="${state.heaterMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.heaterOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
-
-        <div class="device-control">
-            <label>Air Vents:</label>
-            <div class="mode-switch">
-                <button type="submit" name="airVentsMode" value="Off" th:classappend="${state.airVentsMode == 'Off'} ? 'active'">Off</button>
-                <button type="submit" name="airVentsMode" value="On" th:classappend="${state.airVentsMode == 'On'} ? 'active'">On</button>
-                <button type="submit" name="airVentsMode" value="Auto" th:classappend="${state.airVentsMode == 'Auto'} ? 'active'">Auto</button>
-            </div>
-            <span th:classappend="${state.airVentsOn} ? 'status-light green' : 'status-light red'"></span>
-        </div>
-        <div class="device-control">
-            <label>Cycle Mode:</label>
-            <div class="mode-switch">
-                <button type="submit" name="cycleMode" value="Grow" th:classappend="${state.cycleMode == 'Grow'} ? 'active'">Grow</button>
-                <button type="submit" name="cycleMode" value="Bloom" th:classappend="${state.cycleMode == 'Bloom'} ? 'active'">Bloom</button>
-            </div>
-        </div>
-
-        <div class="device-control">
-            <label>Cycle Start:</label>
-            <div class="mode-switch">
-                <span th:text="${#temporals.format(state.cycleStartTime, 'dd MMM yyyy HH:mm')}">--</span>
-            </div>
-        </div>
-
-        <div class="device-control">
-            <label></label>
-            <div class="mode-switch">
-                <form action="/dashboard/startCycle" method="post">
-                    <input type="hidden" name="cycleMode" th:value="${state.cycleMode}" />
-                    <span th:switch="${state.cycleMode}">
-                <button type="submit" th:case="'Grow'">Start Grow Cycle</button>
-                <button type="submit" th:case="'Bloom'">Start Bloom Cycle</button>
-                <button type="submit" th:case="*">Start Cycle</button>
-            </span>
+                <form th:action="@{/dashboard/stopCycle}" method="post">
+                    <button type="submit" class="mode-button">Stop Current</button>
                 </form>
             </div>
         </div>
+
+        <!-- 🕒 Cycle Start Display -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Cycle Start:</label>
+            <div class="mode-switch">
+        <span th:if="${state.cycleStartTime != null}"
+              th:text="${#temporals.format(state.cycleStartTime, 'dd MMM yyyy HH:mm')}">--</span>
+                <span th:if="${state.cycleStartTime == null}">--</span>
+            </div>
+        </div>
+
+        <!-- 📘 Active Cycle Type -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Active Cycle:</label>
+            <div class="mode-switch">
+                <span th:if="${state.growCycle}">Grow</span>
+                <span th:if="${state.bloomCycle}">Bloom</span>
+                <span th:if="${!state.growCycle and !state.bloomCycle}">None</span>
+            </div>
+        </div>
+
+        <!-- 🕒 Auto On Time -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Auto On:</label>
+            <div class="mode-switch">
+        <span th:if="${state.autoOnHour != null and state.autoOnMinute != null}"
+              th:text="${(state.autoOnHour < 10 ? '0' : '') + state.autoOnHour + ':' + (state.autoOnMinute < 10 ? '0' : '') + state.autoOnMinute}">--</span>
+                <span th:if="${state.autoOnHour == null or state.autoOnMinute == null}">--</span>
+            </div>
+        </div>
+
+        <!-- 🌙 Auto Off Time -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Auto Off:</label>
+            <div class="mode-switch">
+        <span th:if="${state.autoOffHour != null and state.autoOffMinute != null}"
+              th:text="${(state.autoOffHour < 10 ? '0' : '') + state.autoOffHour + ':' + (state.autoOffMinute < 10 ? '0' : '') + state.autoOffMinute}">--</span>
+                <span th:if="${state.autoOffHour == null or state.autoOffMinute == null}">--</span>
+            </div>
+        </div>
+
+        <!-- 📅 Days Left -->
+        <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
+            <label>Days Left:</label>
+            <div class="mode-switch">
+        <span th:if="${state.cycleStartTime != null and state.cycleDaysDuration != null}"
+              th:text="${T(java.time.temporal.ChronoUnit).DAYS.between(T(java.time.LocalDateTime).now(), state.cycleStartTime.plusDays(state.cycleDaysDuration))}">
+            --
+        </span>
+                <span th:if="${state.cycleStartTime == null or state.cycleDaysDuration == null}">--</span>
+            </div>
+        </div>
+
+        <table>
+            <tr>
+                <th>Light Spectrum</th>
+                <td th:text="${state.colorFreq} + ' nm'">--</td>
+            </tr>
+            <tr>
+                <th>Light Temperature</th>
+                <td th:text="${state.colorTemp} + ' K'">--</td>
+            </tr>
+        </table>
 
         <div class="control-group">
             <strong>Power Consumption:</strong> <span th:text="${state.currentPowerUse}">0.0</span> W
@@ -227,6 +263,32 @@
         Waiting for first sensor log from E-rrig system...
     </div>
 </div>
+<!-- 🔐 Password Modal -->
+<div id="passwordModal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%);
+     background-color:#222; padding:20px; border-radius:8px; box-shadow:0 0 10px #000; z-index:100;">
+    <h3>Enter Password for Auto Mode</h3>
+    <form id="passwordForm" method="post" action="/dashboard/updateLight">
+        <input type="hidden" name="uniqueId" id="modalDeviceId" />
+        <input type="hidden" name="mode" value="Auto" />
+        <input type="password" name="password" placeholder="Password" required style="width: 100%; margin-bottom: 10px;" />
+        <div style="display:flex; justify-content: flex-end; gap:10px;">
+            <button type="submit" class="mode-button">Submit</button>
+            <button type="button" class="mode-button" onclick="closePasswordModal()">Cancel</button>
+        </div>
+    </form>
+</div>
+<script>
+function openPasswordModalFromButton(button) {
+    const deviceId = button.getAttribute('data-device-id');
+    document.getElementById('modalDeviceId').value = deviceId;
+    document.getElementById('passwordModal').style.display = 'block';
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+}
+</script>
+
 
 </body>
 </html>

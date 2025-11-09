@@ -20,34 +20,42 @@ public class SensorLogger {
 
     @Scheduled(fixedRate = 300000) // every 300 seconds (5min)
     public void logSensorData() {
-        // Get the last message number and increment
-        Long lastNumber = repository.findMaxMessageNumber();
-        Long nextNumber = (lastNumber != null ? lastNumber : 0) + 1;
+        try {
+            Long lastNumber = repository.findMaxMessageNumber();
+            Long nextNumber = (lastNumber != null ? lastNumber : 0) + 1;
 
-        SensorLog log = new SensorLog();
-        log.setMessageId(UUID.randomUUID().toString());
-        log.setMessageNumber(nextNumber);
-        log.setTimestamp(LocalDateTime.now());
+            SensorLog log = new SensorLog();
+            log.setMessageId(UUID.randomUUID().toString());
+            log.setMessageNumber(nextNumber);
+            log.setTimestamp(LocalDateTime.now());
 
-        log.setGrowBloom(random.nextBoolean());
-        log.setLightsOn(random.nextBoolean());
-        log.setPumpActive(random.nextBoolean());
-        log.setFanActive(random.nextBoolean());
-        log.setBlowerActive(random.nextBoolean());
-        log.setHeaterActive(random.nextBoolean());
+            // Simulated system states
+            log.setGrowBloom(random.nextBoolean());
+            log.setLightsOn(random.nextBoolean());
+            log.setPumpActive(random.nextBoolean());
+            log.setFanActive(random.nextBoolean());
+            log.setBlowerActive(random.nextBoolean());
+            log.setHeaterActive(random.nextBoolean());
 
-        log.setPowerUse(round(random.nextDouble() * 500));
-        log.setAirTemp(round(18 + random.nextDouble() * 10));
-        log.setAirHum(round(30 + random.nextDouble() * 40));
-        log.setAirPres(round(950 + random.nextDouble() * 50));
-        log.setCO2ppm(round(400 + random.nextDouble() * 200));
+            // Simulated power and environment
+            log.setPowerUse(round(random.nextDouble() * 500));
+            log.setAirTemp(round(18 + random.nextDouble() * 10));
+            log.setAirHum(round(30 + random.nextDouble() * 40));
+            log.setAirPres(round(950 + random.nextDouble() * 50));
+            log.setCO2ppm(round(400 + random.nextDouble() * 200));
 
-        log.setWaterTemp(round(18 + random.nextDouble() * 5));
-        log.setWaterPH(round(5.5 + random.nextDouble() * 2));
-        log.setWaterEC(round(500 + random.nextDouble() * 300));
-        log.setWaterLevel(round(random.nextDouble() * 100));
+            // Simulated water metrics
+            log.setWaterTemp(round(18 + random.nextDouble() * 5));
+            log.setWaterPH(round(5.5 + random.nextDouble() * 2));
+            log.setWaterEC(round(500 + random.nextDouble() * 300));
+            log.setWaterLevel(round(random.nextDouble() * 100));
 
-        repository.save(log);
+            repository.save(log);
+            System.out.println("✅ SensorLog saved: MSG# " + nextNumber);
+        } catch (Exception e) {
+            System.out.println("🔥 Failed to log sensor data:");
+            e.printStackTrace();
+        }
     }
 
     private double round(double value) {

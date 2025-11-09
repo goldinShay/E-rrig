@@ -6,6 +6,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SystemStateRepository extends JpaRepository<SystemState, Long> {
-    // Optional: fetch the latest state
+
+    /**
+     * Fetches the most recently saved SystemState.
+     * Useful for retrieving the current state snapshot.
+     */
     SystemState findTopByOrderByIdDesc();
 }

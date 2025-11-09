@@ -1,3 +1,8 @@
+let lightsIsAuto = false;
+let isGrowCycle = false;
+let isBloomCycle = false;
+
+
 function formatTimestamp(raw) {
     const date = new Date(raw);
     const pad = n => n.toString().padStart(2, '0');
@@ -37,6 +42,32 @@ function loadLatestPulse() {
                 <tr><th>Heater Active</th><td>${statusDot(data.heaterActive)}</td></tr>
             `;
         });
+}
+
+// 🔐 Protect Auto mode transitions (in and out)
+function submitWithMode(fieldId, targetMode, event) {
+    const currentMode = document.getElementById(fieldId).value;
+    const isChangingAuto = targetMode === "Auto" || currentMode === "Auto";
+
+    // 🔐 First line of defense: password
+    if (isChangingAuto) {
+        const username = prompt("Enter username:");
+        const password = prompt("Enter password:");
+
+        if (username !== "admin" || password !== "!Whatyouwant69") {
+            alert("Access denied. Only admin can change Auto mode.");
+            return;
+        }
+    }
+
+    // 🛡️ Second line of defense: cycle check
+    if (targetMode === "Auto" && !(isGrowCycle || isBloomCycle)) {
+        alert("MUST SELECT A CYCLE FIRST (Grow or Bloom). Auto mode denied.");
+        return;
+    }
+
+    document.getElementById(fieldId).value = targetMode;
+    event.target.closest("form").submit();
 }
 
 loadLatestPulse();
