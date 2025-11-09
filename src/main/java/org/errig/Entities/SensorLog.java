@@ -4,11 +4,18 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "sensor_log")
 public class SensorLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String messageId; // Unique ID for tracking each pulse
+
+    @Column(name = "message_number", nullable = true, unique = true)
+    private Long messageNumber; // Sequential, human-readable number
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
@@ -42,6 +49,22 @@ public class SensorLog {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public Long getMessageNumber() {
+        return messageNumber;
+    }
+
+    public void setMessageNumber(Long messageNumber) {
+        this.messageNumber = messageNumber;
     }
 
     public LocalDateTime getTimestamp() {

@@ -14,15 +14,18 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated()
+                        .requestMatchers("/dashboard", "/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
-                .formLogin(form -> form
+                .oauth2Login(oauth -> oauth
+                        .loginPage("/login") // your custom login.html
                         .defaultSuccessUrl("/welcome", true)
-                        .permitAll()
                 )
-                .logout(logout -> logout.permitAll());
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout") // optional: redirect after logout
+                        .permitAll()
+                );
 
         return http.build();
     }
 }
-

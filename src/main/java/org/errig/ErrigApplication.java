@@ -2,10 +2,12 @@ package org.errig;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
+@EntityScan(basePackages = "org.errig.Entities")
 public class ErrigApplication {
 
 	public static void main(String[] args) {

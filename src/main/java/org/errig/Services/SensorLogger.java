@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class SensorLogger {
@@ -17,30 +18,47 @@ public class SensorLogger {
 
     private final Random random = new Random();
 
-    @Scheduled(fixedRate = 60000) // every 60 seconds
+    @Scheduled(fixedRate = 300000) // every 300 seconds (5min)
     public void logSensorData() {
-        SensorLog log = new SensorLog();
-        log.setTimestamp(LocalDateTime.now());
+        try {
+            Long lastNumber = repository.findMaxMessageNumber();
+            Long nextNumber = (lastNumber != null ? lastNumber : 0) + 1;
 
-        // Simulated values
-        log.setGrowBloom(random.nextBoolean());
-        log.setLightsOn(random.nextBoolean());
-        log.setPumpActive(random.nextBoolean());
-        log.setFanActive(random.nextBoolean());
-        log.setBlowerActive(random.nextBoolean());
-        log.setHeaterActive(random.nextBoolean());
+            SensorLog log = new SensorLog();
+            log.setMessageId(UUID.randomUUID().toString());
+            log.setMessageNumber(nextNumber);
+            log.setTimestamp(LocalDateTime.now());
 
-        log.setPowerUse(random.nextDouble() * 100); // watts
-        log.setAirTemp(20 + random.nextDouble() * 5); // °C
-        log.setAirHum(40 + random.nextDouble() * 20); // %
-        log.setAirPres(1000 + random.nextDouble() * 20); // hPa
-        log.setCO2ppm(400 + random.nextDouble() * 100); // ppm
+            // Simulated system states
+            log.setGrowBloom(random.nextBoolean());
+            log.setLightsOn(random.nextBoolean());
+            log.setPumpActive(random.nextBoolean());
+            log.setFanActive(random.nextBoolean());
+            log.setBlowerActive(random.nextBoolean());
+            log.setHeaterActive(random.nextBoolean());
 
-        log.setWaterTemp(18 + random.nextDouble() * 4); // °C
-        log.setWaterPH(5.5 + random.nextDouble() * 2); // pH
-        log.setWaterEC(1.0 + random.nextDouble() * 1.5); // mS/cm
-        log.setWaterLevel(50 + random.nextDouble() * 50); // %
+            // Simulated power and environment
+            log.setPowerUse(round(random.nextDouble() * 500));
+            log.setAirTemp(round(18 + random.nextDouble() * 10));
+            log.setAirHum(round(30 + random.nextDouble() * 40));
+            log.setAirPres(round(950 + random.nextDouble() * 50));
+            log.setCO2ppm(round(400 + random.nextDouble() * 200));
 
-        repository.save(log);
+            // Simulated water metrics
+            log.setWaterTemp(round(18 + random.nextDouble() * 5));
+            log.setWaterPH(round(5.5 + random.nextDouble() * 2));
+            log.setWaterEC(round(500 + random.nextDouble() * 300));
+            log.setWaterLevel(round(random.nextDouble() * 100));
+
+            repository.save(log);
+            System.out.println("✅ SensorLog saved: MSG# " + nextNumber);
+        } catch (Exception e) {
+            System.out.println("🔥 Failed to log sensor data:");
+            e.printStackTrace();
+        }
+    }
+
+    private double round(double value) {
+        return Math.round(value * 10.0) / 10.0;
     }
 }
