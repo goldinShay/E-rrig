@@ -59,7 +59,7 @@ public abstract class Actuator {
 
     // Getters and setters
 
-    public String getDeviceID() {
+    public String getUniqueId() {
         return uniqueId;
     }
 

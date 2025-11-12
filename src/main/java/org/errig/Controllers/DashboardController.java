@@ -65,6 +65,7 @@ public class DashboardController {
 
             // 🔄 Update only the relevant field(s)
             latest.setLightsMode(state.getLightsMode());
+            System.out.println("💡 About to apply modes. Current lightsMode: " + latest.getLightsMode());
 
             // 🧠 Recalculate actuator states
             systemStateService.applyModes(latest);
@@ -83,30 +84,34 @@ public class DashboardController {
     }
     @PostMapping("/dashboard/setCycle")
     public String setCycle(@RequestParam(required = false) Boolean growCycle,
-                           @RequestParam(required = false) Boolean bloomCycle) {
-        SystemState latest = systemStateService.getLatestState();
-        latest.setGrowCycle(Boolean.TRUE.equals(growCycle));
-        latest.setBloomCycle(Boolean.TRUE.equals(bloomCycle));
-        systemStateService.saveState(latest);
-        return "redirect:/dashboard";
-    }
-    @PostMapping("/dashboard/startCycle")
-    public String startCycle(@ModelAttribute SystemState state, Model model) {
+                           @RequestParam(required = false) Boolean bloomCycle,
+                           Model model) {
         try {
             SystemState latest = systemStateService.getLatestState();
-            latest.setGrowCycle(state.isGrowCycle());
-            latest.setBloomCycle(state.isBloomCycle());
 
+            // 🌱 Set cycle flags
+            latest.setGrowCycle(Boolean.TRUE.equals(growCycle));
+            latest.setBloomCycle(Boolean.TRUE.equals(bloomCycle));
+
+            // 🕒 Start cycle: timestamp, profile, duration
             systemStateService.startCycle(latest);
+
+            // 💾 Persist updated state
             systemStateRepository.save(latest);
-            System.out.println("Cycle start time: " + latest.getCycleStartTime());
+
+            System.out.println("✅ Cycle started: " + (latest.isGrowCycle() ? "Grow" : latest.isBloomCycle() ? "Bloom" : "None"));
+            System.out.println("🕒 Cycle start time: " + latest.getCycleStartTime());
+            System.out.println("📅 Days duration: " + latest.getCycleDaysDuration());
+
             return "redirect:/dashboard";
         } catch (Exception e) {
+            System.out.println("🔥 Exception in setCycle:");
             e.printStackTrace();
             model.addAttribute("errorMessage", "Cycle start failed: " + e.getMessage());
             return "error";
         }
     }
+
     @PostMapping("/dashboard/updateLight")
     public String updateLight(@RequestParam String uniqueId,
                               @RequestParam String mode,
@@ -121,14 +126,25 @@ public class DashboardController {
 
             SystemState state = systemStateService.getLatestState();
 
+            // 🛡️ Defense: Require password to exit Auto mode
+            boolean exitingAuto = "Auto".equalsIgnoreCase(light.getMode()) && !"auto".equalsIgnoreCase(mode);
+            if (exitingAuto) {
+                if (password == null || !password.equals("growSecure")) {
+                    model.addAttribute("errorMessage", "❌ Password required to exit Auto mode.");
+                    return "error";
+                }
+            }
+
             switch (mode.toLowerCase()) {
                 case "on" -> {
                     light.setOn(true);
                     light.setMode("On");
+                    state.setLightsMode("On"); // ✅ Sync system-level mode
                 }
                 case "off" -> {
                     light.setOn(false);
                     light.setMode("Off");
+                    state.setLightsMode("Off"); // ✅ Sync system-level mode
                 }
                 case "auto" -> {
                     if (!state.isGrowCycle() && !state.isBloomCycle()) {
@@ -142,8 +158,10 @@ public class DashboardController {
                     }
 
                     light.setMode("Auto");
-                    // Let the system decide whether it's currently On or Off
-                    // based on time and cycle logic — not here
+                    state.setLightsMode("Auto"); // ✅ Sync system-level mode
+
+                    systemStateService.applyModes(state);
+                    systemStateService.saveState(state);
                 }
             }
 
@@ -152,11 +170,13 @@ public class DashboardController {
 
             return "redirect:/dashboard";
         } catch (Exception e) {
+            System.out.println("🔥 Exception in updateLight:");
             e.printStackTrace();
             model.addAttribute("errorMessage", "Update failed: " + e.getMessage());
             return "error";
         }
     }
+
     @PostMapping("/dashboard/stopCycle")
     public String stopCycle() {
         SystemState latest = systemStateService.getLatestState();
