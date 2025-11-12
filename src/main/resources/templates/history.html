@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>System History</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #fdfdfd;
+            color: #222;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            text-align: center;
+        }
+        th, td {
+            padding: 8px;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
+        }
+        th {
+            background-color: #eee;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-button {
+            display: inline-block;
+        }
+        .dark-mode {
+            background-color: #1e1e1e;
+            color: #ccc;
+        }
+        .dark-mode th {
+            background-color: #333;
+            color: #ffcc00;
+        }
+        .dark-mode td {
+            border-bottom: 1px solid #555;
+        }
+        .toggle-button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: inherit;
+        }
+        input[type="password"] {
+            padding: 6px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="header-controls">
+    <!-- 🌑 Dark Mode Toggle -->
+    <button class="toggle-button" onclick="toggleDarkMode()" id="modeToggle" title="Toggle dark mode">🌙</button>
+
+    <!-- 🔐 Clear Button -->
+    <button class="toggle-button" onclick="openClearModal()" title="Clear history">🗑️ Clear History</button>
+</div>
+
+<h2>📜 Sensor Log History</h2>
+
+<div th:if="${errorMessage}" class="error">
+    <p th:text="${errorMessage}"></p>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Date / Time</th>
+        <th>Air Temp (°C)</th>
+        <th>Air Hum (%)</th>
+        <th>CO₂ (ppm)</th>
+        <th>Water Temp (°C)</th>
+        <th>pH</th>
+        <th>EC (µS/cm)</th>
+        <th>Power (W)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="log : ${logs}">
+        <td th:text="${log.messageNumber}">--</td>
+        <td th:text="${#temporals.format(log.timestamp, 'dd MMM yyyy HH:mm:ss')}">--</td>
+        <td th:text="${log.airTemp}">--</td>
+        <td th:text="${log.airHum}">--</td>
+        <td th:text="${log.CO2ppm}">--</td>
+        <td th:text="${log.waterTemp}">--</td>
+        <td th:text="${log.waterPH}">--</td>
+        <td th:text="${log.waterEC}">--</td>
+        <td th:text="${log.powerUse}">--</td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- 🔐 Clear Modal -->
+<div id="clearModal" style="display: none; margin-top: 20px;">
+    <form th:action="@{/history/clear}" method="post">
+        <input type="password" name="password" placeholder="Enter password to clear logs" required />
+        <button type="submit">Confirm Clear</button>
+        <button type="button" onclick="closeClearModal()">Cancel</button>
+    </form>
+</div>
+
+<script>
+function toggleDarkMode() {
+    const body = document.body;
+    const toggle = document.getElementById('modeToggle');
+    body.classList.toggle('dark-mode');
+    toggle.textContent = body.classList.contains('dark-mode') ? '☀️' : '🌙';
+}
+
+function openClearModal() {
+    document.getElementById('clearModal').style.display = 'block';
+}
+
+function closeClearModal() {
+    document.getElementById('clearModal').style.display = 'none';
+}
+</script>
+</body>
+</html>

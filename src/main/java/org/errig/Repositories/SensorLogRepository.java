@@ -12,5 +12,6 @@ public interface  SensorLogRepository extends JpaRepository<SensorLog, Long> {
     @Query("SELECT MAX(s.messageNumber) FROM SensorLog s")
     Long findMaxMessageNumber();
 
+    List<SensorLog> findAllByOrderByTimestampDesc();
 
 }

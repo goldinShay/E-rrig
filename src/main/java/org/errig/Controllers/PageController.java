@@ -34,10 +34,10 @@ public class PageController {
         return "welcome";
     }
 
-    @GetMapping("/history")
-    public String history() {
-        return "history";
-    }
+//    @GetMapping("/history")
+//    public String history() {
+//        return "history";
+//    }
 
     @GetMapping("/settings")
     public String settings() {
