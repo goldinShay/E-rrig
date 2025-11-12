@@ -124,22 +124,44 @@
                 <input type="hidden" name="uniqueId" th:value="${light.deviceID}" />
                 <label th:text="${light.name}">Light Name</label>
 
-                <button type="submit" name="mode" value="Off"
+                <!-- Off Button -->
+                <button type="button"
                         class="mode-button"
+                        th:if="${light.mode == 'Auto'}"
+                        th:attr="data-device-id=${light.uniqueId}, data-mode='off'"
+                        onclick="openPasswordModalFromButton(this)">Off</button>
+
+                <button type="submit"
+                        name="mode"
+                        value="Off"
+                        class="mode-button"
+                        th:if="${light.mode != 'Auto'}"
                         th:classappend="${!light.on} ? 'active'">Off</button>
 
-                <button type="submit" name="mode" value="On"
+                <!-- On Button -->
+                <button type="button"
                         class="mode-button"
+                        th:if="${light.mode == 'Auto'}"
+                        th:attr="data-device-id=${light.uniqueId}, data-mode='on'"
+                        onclick="openPasswordModalFromButton(this)">On</button>
+
+                <button type="submit"
+                        name="mode"
+                        value="On"
+                        class="mode-button"
+                        th:if="${light.mode != 'Auto'}"
                         th:classappend="${light.on} ? 'active'">On</button>
 
+                <!-- Auto Button -->
                 <button type="button"
                         class="mode-button"
                         th:disabled="${!state.growCycle and !state.bloomCycle}"
                         th:title="${!state.growCycle and !state.bloomCycle} ? 'Must start a cycle first' : ''"
-                        data-device-id="${light.deviceID}"
+                        th:attr="data-device-id=${light.uniqueId}, data-mode='auto'"
                         onclick="openPasswordModalFromButton(this)"
                         th:classappend="${light.mode == 'Auto'} ? 'active'">Auto</button>
 
+                <!-- Status Light -->
                 <span th:classappend="${light.on} ? 'status-light green' : 'status-light red'"></span>
             </form>
         </div>
@@ -264,23 +286,39 @@
     </div>
 </div>
 <!-- 🔐 Password Modal -->
-<div id="passwordModal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%);
-     background-color:#222; padding:20px; border-radius:8px; box-shadow:0 0 10px #000; z-index:100;">
+<div id="passwordModal" style="
+    display: none;
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+    z-index: 100;
+">
     <h3>Enter Password for Auto Mode</h3>
-    <form id="passwordForm" method="post" action="/dashboard/updateLight">
+    <form id="passwordForm" method="post" th:action="@{/dashboard/updateLight}">
         <input type="hidden" name="uniqueId" id="modalDeviceId" />
-        <input type="hidden" name="mode" value="Auto" />
+        <input type="hidden" name="mode" id="modalMode" value="auto" />
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="password" name="password" placeholder="Password" required style="width: 100%; margin-bottom: 10px;" />
-        <div style="display:flex; justify-content: flex-end; gap:10px;">
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
             <button type="submit" class="mode-button">Submit</button>
             <button type="button" class="mode-button" onclick="closePasswordModal()">Cancel</button>
         </div>
     </form>
 </div>
+
+
 <script>
 function openPasswordModalFromButton(button) {
     const deviceId = button.getAttribute('data-device-id');
+    const mode = button.getAttribute('data-mode') || 'auto'; // default to auto if not set
+
     document.getElementById('modalDeviceId').value = deviceId;
+    document.getElementById('modalMode').value = mode;
     document.getElementById('passwordModal').style.display = 'block';
 }
 
@@ -288,7 +326,6 @@ function closePasswordModal() {
     document.getElementById('passwordModal').style.display = 'none';
 }
 </script>
-
 
 </body>
 </html>

@@ -76,7 +76,7 @@ public class DeviceManagerCLI {
 
         for (LEDLight device : devices) {
             String line = String.format("%8s | %-10s | %-5s | %-11s | %-20s | %s",
-                    device.getDeviceID(),
+                    device.getUniqueId(),
                     device.getName(),
                     device.isOn() ? "On" : "Off",
                     device.getBrand(),

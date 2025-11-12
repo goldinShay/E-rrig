@@ -37,6 +37,14 @@ public class LEDLight extends Actuator {
     public LEDLight() {
         // Required by JPA
     }
+    public String getDeviceID() {
+        return super.getUniqueId();
+    }
+    public String getUniqueId() {
+        return super.getUniqueId();
+    }
+
+
 
     // Getters and setters...
 

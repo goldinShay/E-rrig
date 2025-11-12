@@ -29,7 +29,7 @@ public class RemoveDeviceCLI {
         if (input.equals("0")) return true;
 
         LEDLight target = devices.stream()
-                .filter(d -> d.getDeviceID().equalsIgnoreCase(input))
+                .filter(d -> d.getUniqueId().equalsIgnoreCase(input))
                 .findFirst()
                 .orElse(null);
 
