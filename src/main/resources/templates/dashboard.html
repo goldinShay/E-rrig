@@ -212,9 +212,9 @@
         <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
             <label>Auto On:</label>
             <div class="mode-switch">
-        <span th:if="${state.autoOnHour != null and state.autoOnMinute != null}"
-              th:text="${(state.autoOnHour < 10 ? '0' : '') + state.autoOnHour + ':' + (state.autoOnMinute < 10 ? '0' : '') + state.autoOnMinute}">--</span>
-                <span th:if="${state.autoOnHour == null or state.autoOnMinute == null}">--</span>
+        <span th:if="${state.autoOnTime != null}"
+              th:text="${#temporals.format(state.autoOnTime, 'HH:mm')}">--</span>
+                <span th:if="${state.autoOnTime == null}">--</span>
             </div>
         </div>
 
@@ -222,9 +222,9 @@
         <div class="device-control" style="display: flex; align-items: center; gap: 20px;">
             <label>Auto Off:</label>
             <div class="mode-switch">
-        <span th:if="${state.autoOffHour != null and state.autoOffMinute != null}"
-              th:text="${(state.autoOffHour < 10 ? '0' : '') + state.autoOffHour + ':' + (state.autoOffMinute < 10 ? '0' : '') + state.autoOffMinute}">--</span>
-                <span th:if="${state.autoOffHour == null or state.autoOffMinute == null}">--</span>
+        <span th:if="${state.autoOffTime != null}"
+              th:text="${#temporals.format(state.autoOffTime, 'HH:mm')}">--</span>
+                <span th:if="${state.autoOffTime == null}">--</span>
             </div>
         </div>
 

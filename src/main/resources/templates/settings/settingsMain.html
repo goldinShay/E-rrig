@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Settings Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      background-image: url('/images/GreenHouseSettingsImg01.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+    }
+
+    header {
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.5); /* semi-transparent overlay */
+    }
+
+    .settings-menu {
+      margin-top: 50px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .settings-menu a {
+      padding: 15px 25px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      font-size: 18px;
+      transition: background 0.3s ease;
+    }
+
+    .settings-menu a:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Settings Dashboard</h1>
+</header>
+
+<div class="settings-menu">
+  <a href="/welcome">🏠 Home</a>
+  <a href="/settings/device">⚙️ Device Settings</a>
+  <a href="/settings/cycle">🔄 Cycle Settings</a>
+</div>
+</body>
+</html>
