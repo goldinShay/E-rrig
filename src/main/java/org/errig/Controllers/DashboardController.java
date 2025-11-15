@@ -180,10 +180,7 @@ public class DashboardController {
     @PostMapping("/dashboard/stopCycle")
     public String stopCycle() {
         SystemState latest = systemStateService.getLatestState();
-        latest.setGrowCycle(false);
-        latest.setBloomCycle(false);
-        latest.setCycleStartTime(null);
-        systemStateService.saveState(latest);
+        systemStateService.stopCycle(latest); // delegate to service
         return "redirect:/dashboard";
     }
 }

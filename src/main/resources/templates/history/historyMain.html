@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>History Dashboard</title>
+  <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-image: url('/images/GreenHouseSettingsImg01.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 28px;
+            color: #ffcc00;
+        }
+
+        .nav-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .nav-buttons a {
+            display: block;
+            padding: 12px 20px;
+            background-color: #2e7d32;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-buttons a:hover {
+            background-color: #1b5e20;
+        }
+    </style>
+</head>
+<body>
+<div class="overlay">
+  <h1>📜 History Dashboard</h1>
+  <div class="nav-buttons">
+    <!-- Sensor Log History -->
+    <a th:href="@{/history/sensors}">🌡️ Sensor Log History</a>
+
+    <!-- Cycle Log History -->
+    <a th:href="@{/history/cycles}">🌱 Cycle Log History</a>
+
+    <!-- Settings -->
+    <a th:href="@{/settings}">⚙️ Settings</a>
+
+    <!-- Home -->
+    <a th:href="@{/welcome}">🏠 Home</a>
+  </div>
+</div>
+</body>
+</html>

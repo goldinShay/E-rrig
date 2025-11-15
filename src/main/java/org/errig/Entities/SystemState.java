@@ -2,6 +2,7 @@ package org.errig.Entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,18 +31,22 @@ public class SystemState {
     private String fogInducerMode;
     private String heaterMode;
     private String airVentsMode;
-    // Grow/Bloom cycle tracking
+    /// Grow/Bloom cycle tracking
     private boolean growCycle;
     private boolean bloomCycle;
     private LocalDateTime cycleStartTime;
 
-    // Auto schedule and duration — now using wrapper types
-    private Integer autoOnHour;
-    private Integer autoOnMinute;
-    private Integer autoOffHour;
-    private Integer autoOffMinute;
+    // Auto schedule and duration — now using LocalTime
+    private LocalTime autoOnTime;      // when cycle starts each day
+    private LocalTime autoOffTime;     // when cycle ends each day
     private Integer cycleHoursDuration;
     private Integer cycleDaysDuration;
+
+    // Environmental parameters for cycle logging
+    private Double temperature;   // in °C
+    private Double ec;            // Electrical conductivity
+    private Double ph;            // Acidity/alkalinity
+
 
     // Real-time actuator states
     @Column(nullable = true)
@@ -64,7 +69,7 @@ public class SystemState {
     @JoinColumn(name = "system_state_id") // foreign key in LEDLight table
     private List<LEDLight> ledLights = new ArrayList<>();
 
-    // Getters and setters
+    // --- Getters and Setters ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -131,91 +136,32 @@ public class SystemState {
 
     public List<LEDLight> getLedLights() { return ledLights; }
     public void setLedLights(List<LEDLight> ledLights) { this.ledLights = ledLights; }
-    public int getColorFreq() {
-        return colorFreq;
-    }
 
-    public void setColorFreq(int colorFreq) {
-        this.colorFreq = colorFreq;
-    }
+    public int getColorFreq() { return colorFreq; }
+    public void setColorFreq(int colorFreq) { this.colorFreq = colorFreq; }
 
-    public int getColorTemp() {
-        return colorTemp;
-    }
+    public int getColorTemp() { return colorTemp; }
+    public void setColorTemp(int colorTemp) { this.colorTemp = colorTemp; }
 
-    public void setColorTemp(int colorTemp) {
-        this.colorTemp = colorTemp;
-    }
+    // 🌱 Robust time handling
+    public LocalTime getAutoOnTime() { return autoOnTime; }
+    public void setAutoOnTime(LocalTime autoOnTime) { this.autoOnTime = autoOnTime; }
 
-    public int getAutoOnHour() {
-        return autoOnHour;
-    }
+    public LocalTime getAutoOffTime() { return autoOffTime; }
+    public void setAutoOffTime(LocalTime autoOffTime) { this.autoOffTime = autoOffTime; }
 
-    public void setAutoOnHour(int autoOnHour) {
-        this.autoOnHour = autoOnHour;
-    }
+    public Integer getCycleHoursDuration() { return cycleHoursDuration; }
+    public void setCycleHoursDuration(Integer cycleHoursDuration) { this.cycleHoursDuration = cycleHoursDuration; }
 
-    public int getAutoOnMinute() {
-        return autoOnMinute;
-    }
+    public Integer getCycleDaysDuration() { return cycleDaysDuration; }
+    public void setCycleDaysDuration(Integer cycleDaysDuration) { this.cycleDaysDuration = cycleDaysDuration; }
 
-    public void setAutoOnMinute(int autoOnMinute) {
-        this.autoOnMinute = autoOnMinute;
-    }
+    public Double getTemperature() { return temperature; }
+    public void setTemperature(Double temperature) { this.temperature = temperature; }
 
-    public int getAutoOffHour() {
-        return autoOffHour;
-    }
+    public Double getEc() { return ec; }
+    public void setEc(Double ec) { this.ec = ec; }
 
-    public void setAutoOffHour(int autoOffHour) {
-        this.autoOffHour = autoOffHour;
-    }
-
-    public int getAutoOffMinute() {
-        return autoOffMinute;
-    }
-
-    public void setAutoOffMinute(int autoOffMinute) {
-        this.autoOffMinute = autoOffMinute;
-    }
-
-    public int getCycleHoursDuration() {
-        return cycleHoursDuration;
-    }
-
-    public void setCycleHoursDuration(int cycleHoursDuration) {
-        this.cycleHoursDuration = cycleHoursDuration;
-    }
-
-    public int getCycleDaysDuration() {
-        return cycleDaysDuration;
-    }
-
-    public void setCycleDaysDuration(int cycleDaysDuration) {
-        this.cycleDaysDuration = cycleDaysDuration;
-    }
-
-    public void setAutoOnHour(Integer autoOnHour) {
-        this.autoOnHour = autoOnHour;
-    }
-
-    public void setAutoOnMinute(Integer autoOnMinute) {
-        this.autoOnMinute = autoOnMinute;
-    }
-
-    public void setAutoOffHour(Integer autoOffHour) {
-        this.autoOffHour = autoOffHour;
-    }
-
-    public void setAutoOffMinute(Integer autoOffMinute) {
-        this.autoOffMinute = autoOffMinute;
-    }
-
-    public void setCycleHoursDuration(Integer cycleHoursDuration) {
-        this.cycleHoursDuration = cycleHoursDuration;
-    }
-
-    public void setCycleDaysDuration(Integer cycleDaysDuration) {
-        this.cycleDaysDuration = cycleDaysDuration;
-    }
+    public Double getPh() { return ph; }
+    public void setPh(Double ph) { this.ph = ph; }
 }

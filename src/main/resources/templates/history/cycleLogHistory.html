@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>System History</title>
-    <style>
+  <title>Cycle Log History</title>
+  <style>
         body {
             font-family: sans-serif;
             padding: 20px;
@@ -33,9 +33,6 @@
             justify-content: space-between;
             align-items: center;
         }
-        .clear-button {
-            display: inline-block;
-        }
         .dark-mode {
             background-color: #1e1e1e;
             color: #ccc;
@@ -62,55 +59,61 @@
 </head>
 <body>
 <div class="header-controls">
-    <!-- 🌑 Dark Mode Toggle -->
-    <button class="toggle-button" onclick="toggleDarkMode()" id="modeToggle" title="Toggle dark mode">🌙</button>
+  <!-- 🌑 Dark Mode Toggle -->
+  <button class="toggle-button" onclick="toggleDarkMode()" id="modeToggle" title="Toggle dark mode">🌙</button>
 
-    <!-- 🔐 Clear Button -->
-    <button class="toggle-button" onclick="openClearModal()" title="Clear history">🗑️ Clear History</button>
+  <!-- 🔐 Clear Button -->
+  <button class="toggle-button" onclick="openClearModal()" title="Clear cycle logs">🗑️ Clear Cycle Logs</button>
 </div>
 
-<h2>📜 Sensor Log History</h2>
+<h2>🌱 Cycle Log History</h2>
 
 <div th:if="${errorMessage}" class="error">
-    <p th:text="${errorMessage}"></p>
+  <p th:text="${errorMessage}"></p>
 </div>
 
 <table>
-    <thead>
-    <tr>
-        <th>#</th>
-        <th>Date / Time</th>
-        <th>Air Temp (°C)</th>
-        <th>Air Hum (%)</th>
-        <th>CO₂ (ppm)</th>
-        <th>Water Temp (°C)</th>
-        <th>pH</th>
-        <th>EC (µS/cm)</th>
-        <th>Power (W)</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="log : ${logs}">
-        <td th:text="${log.messageNumber}">--</td>
-        <td th:text="${#temporals.format(log.timestamp, 'dd MMM yyyy HH:mm:ss')}">--</td>
-        <td th:text="${log.airTemp}">--</td>
-        <td th:text="${log.airHum}">--</td>
-        <td th:text="${log.CO2ppm}">--</td>
-        <td th:text="${log.waterTemp}">--</td>
-        <td th:text="${log.waterPH}">--</td>
-        <td th:text="${log.waterEC}">--</td>
-        <td th:text="${log.powerUse}">--</td>
-    </tr>
-    </tbody>
+  <thead>
+  <tr>
+    <th>Cycle Type</th>
+    <th>UpdatedTS</th>
+    <th>Active</th>
+    <th>CO₂</th>
+    <th>On Time</th>
+    <th>Off Time</th>
+    <th>Duration (Days)</th>
+    <th>Spectrum (nm)</th>
+    <th>Temp (°C)</th>
+    <th>EC</th>
+    <th>pH</th>
+  </tr>
+  </thead>
+
+  <tbody>
+  <tr th:each="log : ${cycleLogs}">
+    <td th:text="${log.cycleType}">Grow</td>
+    <td th:text="${#temporals.format(log.updatedTs, 'dd MMM yyyy HH:mm:ss')}">--</td>
+    <td th:text="${log.active ? 'Yes' : 'No'}">Yes</td>
+    <td th:text="${log.co2 ? 'Yes' : 'No'}">No</td>
+    <td th:text="${#temporals.format(log.powerOnTime, 'HH:mm')}">06:00</td>
+    <td th:text="${#temporals.format(log.powerOffTime, 'HH:mm')}">18:00</td>
+    <td th:text="${log.cycleDurationDays}">28</td>
+    <td th:text="${log.spectrum}">450</td>
+    <td th:text="${log.temp}">20.0</td>
+    <td th:text="${log.ec}">1.0</td>
+    <td th:text="${log.ph}">7.0</td>
+  </tr>
+  </tbody>
+
 </table>
 
 <!-- 🔐 Clear Modal -->
 <div id="clearModal" style="display: none; margin-top: 20px;">
-    <form th:action="@{/history/clear}" method="post">
-        <input type="password" name="password" placeholder="Enter password to clear logs" required />
-        <button type="submit">Confirm Clear</button>
-        <button type="button" onclick="closeClearModal()">Cancel</button>
-    </form>
+  <form th:action="@{/history/cycles/clear}" method="post">
+    <input type="password" name="password" placeholder="Enter password to clear cycle logs" required />
+    <button type="submit">Confirm Clear</button>
+    <button type="button" onclick="closeClearModal()">Cancel</button>
+  </form>
 </div>
 
 <script>

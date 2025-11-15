@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Cycle Settings</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      background-image: url('/images/GreenHouseSettingsImg01.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+    }
+    header {
+      padding: 20px;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+    }
+    .container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 40px;
+    }
+    .settings-column {
+      background: rgba(0,0,0,0.6);
+      padding: 20px;
+      border-radius: 10px;
+      width: 40%;
+    }
+    .settings-column h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .edit-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .lock-icon {
+      cursor: pointer;
+      font-size: 20px;
+    }
+    table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #888;
+    }
+    .edit-controls {
+      display: none;
+      margin-top: 10px;
+    }
+    .edit-controls input {
+      margin: 5px;
+    }
+    .edit-controls button {
+      margin: 5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Cycle Settings</h1>
+</header>
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" id="csrfToken">
+<div class="container">
+  <!-- Grow Settings -->
+  <div class="settings-column" id="growColumn">
+    <h2>Grow Settings
+      <button class="edit-btn" onclick="openModal('grow')">✏️</button>
+    </h2>
+    <table>
+      <tr><td>Day starts:</td><td id="growStart">06:00</td></tr>
+      <tr><td><span class="lock-icon" onclick="toggleLock('grow')">🔒</span> Constrain:</td><td id="growConstrain">yes</td></tr>
+      <tr><td>Day End:</td><td id="growEnd">23:59</td></tr>
+      <tr><td>Cycle Duration:</td><td>28</td></tr>
+      <tr><td>Light Spectrum:</td><td>450nm</td></tr>
+      <tr><td>Temperature:</td><td>26.5</td></tr>
+      <tr><td>EC:</td><td>1.2</td></tr>
+      <tr><td>pH:</td><td>6.5</td></tr>
+    </table>
+    <div class="edit-controls" id="growEdit">
+      <form id="growForm">
+        <input type="hidden" name="cycleType" value="grow">
+        <label>Start:</label><input type="time" name="startTime" id="growStartInput" value="06:00">
+        <label>End:</label><input type="time" name="endTime" id="growEndInput" value="23:59">
+        <input type="hidden" name="constrain" id="growConstrainInput" value="true">
+        <button type="button" onclick="submitEdit('grow')">Submit</button>
+        <button type="button" onclick="cancelEdit('grow')">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bloom Settings -->
+  <div class="settings-column" id="bloomColumn">
+    <h2>Bloom Settings
+      <button class="edit-btn" onclick="openModal('bloom')">✏️</button>
+    </h2>
+    <table>
+      <tr><td>Day starts:</td><td id="bloomStart">06:00</td></tr>
+      <tr><td><span class="lock-icon" onclick="toggleLock('bloom')">🔒</span> Constrain:</td><td id="bloomConstrain">yes</td></tr>
+      <tr><td>Day End:</td><td id="bloomEnd">18:00</td></tr>
+      <tr><td>Cycle Duration:</td><td>91</td></tr>
+      <tr><td>Light Spectrum:</td><td>660nm</td></tr>
+      <tr><td>Temperature:</td><td>20.2</td></tr>
+      <tr><td>EC:</td><td>1.4</td></tr>
+      <tr><td>pH:</td><td>6.8</td></tr>
+    </table>
+    <div class="edit-controls" id="bloomEdit">
+      <form id="bloomForm">
+        <input type="hidden" name="cycleType" value="bloom">
+        <label>Start:</label><input type="time" name="startTime" id="bloomStartInput" value="06:00">
+        <label>End:</label><input type="time" name="endTime" id="bloomEndInput" value="18:00">
+        <input type="hidden" name="constrain" id="bloomConstrainInput" value="true">
+        <button type="button" onclick="submitEdit('bloom')">Submit</button>
+        <button type="button" onclick="cancelEdit('bloom')">Cancel</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div id="passwordModal" class="modal">
+  <div class="modal-content">
+    <p>Enter password to edit:</p>
+    <input type="password" id="passwordInput">
+    <button onclick="checkPassword()">Submit</button>
+  </div>
+</div>
+
+<script>
+  let currentCycle = null;
+  let lockState = { grow: true, bloom: true };
+
+  // Utility: add hours to HH:mm, wrap over midnight
+  function addHoursToTime(hhmm, hoursToAdd) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const base = new Date(2000, 0, 1, h, m, 0);
+    base.setHours(base.getHours() + hoursToAdd);
+    const hh = String(base.getHours()).padStart(2, '0');
+    const mm = String(base.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  // Get regime hours by cycle
+  function regimeHours(cycle) {
+    return cycle === 'grow' ? 18 : 12;
+  }
+
+  function openModal(cycle) {
+    currentCycle = cycle;
+    document.getElementById('passwordModal').style.display = 'flex';
+  }
+
+  function checkPassword() {
+    const pwd = document.getElementById('passwordInput').value;
+    if (pwd === 'growSecure') { // replace with real validation
+      document.getElementById('passwordModal').style.display = 'none';
+      document.getElementById(currentCycle + 'Edit').style.display = 'block';
+      const other = currentCycle === 'grow' ? 'bloom' : 'grow';
+      document.getElementById(other + 'Edit').style.display = 'none';
+
+      // Attach listeners to enforce constraint reactively
+      attachConstraintListeners(currentCycle);
+    } else {
+      alert('Wrong password!');
+    }
+  }
+
+  function attachConstraintListeners(cycle) {
+    const startInput = document.getElementById(cycle + 'StartInput');
+    const endInput = document.getElementById(cycle + 'EndInput');
+
+    // When Constrain is ON, Start controls End according to regime
+    startInput.oninput = () => {
+      if (lockState[cycle]) {
+        endInput.value = addHoursToTime(startInput.value, regimeHours(cycle));
+        // Reflect UI immediately
+        document.getElementById(cycle + 'End').textContent = endInput.value;
+      }
+    };
+
+    // If user edits End while constrained, keep it aligned to Start
+    endInput.oninput = () => {
+      if (lockState[cycle]) {
+        endInput.value = addHoursToTime(startInput.value, regimeHours(cycle));
+        document.getElementById(cycle + 'End').textContent = endInput.value;
+      }
+    };
+  }
+
+  function toggleLock(cycle) {
+    if (currentCycle !== cycle) {
+      alert("You must be in Edit mode to change constraints.");
+      return;
+    }
+    lockState[cycle] = !lockState[cycle];
+    document.getElementById(cycle + 'Constrain').textContent = lockState[cycle] ? 'yes' : 'no';
+    document.getElementById(cycle + 'ConstrainInput').value = lockState[cycle] ? 'true' : 'false';
+    const icon = event.target;
+    icon.textContent = lockState[cycle] ? '🔒' : '🔓';
+
+    // If turning ON constraint, snap End to regime window based on current Start
+    if (lockState[cycle]) {
+      const start = document.getElementById(cycle + 'StartInput').value;
+      const endField = document.getElementById(cycle + 'EndInput');
+      endField.value = addHoursToTime(start, regimeHours(cycle));
+      document.getElementById(cycle + 'End').textContent = endField.value;
+    }
+  }
+
+  function submitEdit(cycle) {
+    const start = document.getElementById(cycle + 'StartInput').value;
+    const end = document.getElementById(cycle + 'EndInput').value;
+    const constrainValue = document.getElementById(cycle + 'ConstrainInput').value;
+
+    // Update UI immediately
+    document.getElementById(cycle + 'Start').textContent = start;
+    document.getElementById(cycle + 'End').textContent = end;
+
+    // Persist to backend
+    const csrfToken = document.getElementById('csrfToken')?.value; // added below
+    fetch('/settings/cycle/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+      },
+      body: new URLSearchParams({
+        cycleType: cycle,
+        startTime: start,   // HH:mm
+        endTime: end,       // HH:mm
+        constrain: constrainValue
+      })
+    }).then(resp => {
+      if (resp.ok) {
+        console.log("Cycle update persisted.");
+      } else {
+        alert("Failed to save cycle.");
+      }
+    }).catch(err => {
+      console.error("Error saving cycle:", err);
+      alert("Failed to save cycle.");
+    });
+
+    cancelEdit(cycle);
+  }
+
+  function cancelEdit(cycle) {
+    document.getElementById(cycle + 'Edit').style.display = 'none';
+    currentCycle = null;
+  }
+</script>
+
+</body>
+</html>

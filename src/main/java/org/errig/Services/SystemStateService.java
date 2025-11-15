@@ -1,9 +1,7 @@
 package org.errig.Services;
 
-import org.errig.Entities.LEDLight;
-import org.errig.Entities.LEDModel;
-import org.errig.Entities.SensorLog;
-import org.errig.Entities.SystemState;
+import org.errig.Entities.*;
+import org.errig.Repositories.CycleLogRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
 import org.errig.cycles.CycleManager;
@@ -12,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 public class SystemStateService {
@@ -24,6 +23,9 @@ public class SystemStateService {
 
     @Autowired
     private CycleManager cycleManager;
+
+    @Autowired
+    private CycleLogRepository cycleLogRepository;
 
     public SystemState getLatestState() {
         SystemState state = repository.findTopByOrderByIdDesc();
@@ -39,8 +41,7 @@ public class SystemStateService {
             state.setWaterLevelStatus(resolveWaterLevelStatus(latestLog.getWaterLevel()));
             state.setCurrentPowerUse(latestLog.getPowerUse());
 
-            logCycleStatus(state);
-            cycleManager.applyCycleProfile(state);
+            cycleManager.applyCycleProfile(state, true);
         } else {
             state.setGeneralPower(false);
             state.setWaterLevelStatus("Too Low");
@@ -76,6 +77,15 @@ public class SystemStateService {
         state.setHeaterOn(false);
         state.setAirVentsOn(false);
 
+        // 🌡️ Environmental defaults
+        state.setTemperature(20.0);
+        state.setEc(1.0);
+        state.setPh(7.0);
+
+        // ⏰ Default cycle times
+        state.setAutoOnTime(LocalTime.of(6, 0));   // 06:00
+        state.setAutoOffTime(LocalTime.of(18, 0)); // 18:00
+
         return state;
     }
 
@@ -86,23 +96,12 @@ public class SystemStateService {
         return "Too Low";
     }
 
-    private void logCycleStatus(SystemState state) {
-        if (state.isGrowCycle()) {
-            System.out.println("Cycle: Grow");
-        } else if (state.isBloomCycle()) {
-            System.out.println("Cycle: Bloom");
-        } else {
-            System.out.println("Cycle: None");
-        }
-    }
-
+    // 🚀 Start a cycle
     public void startCycle(SystemState state) {
         state.setCycleStartTime(LocalDateTime.now());
 
-        // 🌱 Apply Grow or Bloom profile
-        cycleManager.applyCycleProfile(state);
+        cycleManager.applyCycleProfile(state, true);
 
-        // 🌿 Set all relevant actuators to Auto mode
         state.setLightsMode("Auto");
         state.setPumpsMode("Auto");
         state.setBlowersMode("Auto");
@@ -111,34 +110,58 @@ public class SystemStateService {
 
         applyModes(state);
         saveState(state);
+
+        // Persist the activation
+        logCycleState(state);
+    }
+
+    // 🛑 Stop a cycle
+    public void stopCycle(SystemState state) {
+        state.setGrowCycle(false);
+        state.setBloomCycle(false);
+        state.setCycleStartTime(null);
+
+        disableAutoModes(state);
+        saveState(state);
+
+        // Persist the deactivation
+        logCycleState(state);
     }
 
     public void applyModes(SystemState state) {
         boolean cycleDefined = state.isGrowCycle() || state.isBloomCycle();
         boolean powerOn = Boolean.TRUE.equals(state.isGeneralPower());
 
-        // 🌿 Handle Auto mode for lights
+        // 🌱 Lights Auto Mode
         if ("Auto".equals(safe(state.getLightsMode())) && cycleDefined && powerOn) {
             LocalTime now = LocalTime.now();
-            LocalTime onTime = LocalTime.of(state.getAutoOnHour(), state.getAutoOnMinute());
-            LocalTime offTime = LocalTime.of(state.getAutoOffHour(), state.getAutoOffMinute());
+            LocalTime onTime = state.getAutoOnTime();
+            LocalTime offTime = state.getAutoOffTime();
 
-            boolean withinWindow = !now.isBefore(onTime) && !now.isAfter(offTime);
+            boolean withinWindow = false;
+            if (onTime != null && offTime != null) {
+                if (onTime.isBefore(offTime) || onTime.equals(offTime)) {
+                    // Normal window (e.g. 06:00 → 18:00)
+                    withinWindow = !now.isBefore(onTime) && !now.isAfter(offTime);
+                } else {
+                    // Overnight window (e.g. 18:00 → 06:00 next day)
+                    withinWindow = !now.isBefore(onTime) || !now.isAfter(offTime);
+                }
+            }
+
             state.setLightsOn(withinWindow);
 
-            // 🔄 Sync LED lights in Auto mode
             for (LEDLight light : state.getLedLights()) {
                 if ("Auto".equals(safe(light.getMode()))) {
                     light.setOn(withinWindow);
                     light.setUpdatedTS(LocalDateTime.now());
-                    System.out.println("🔄 Syncing LED: " + light.getName() + " → " + (withinWindow ? "ON" : "OFF"));
                 }
             }
         } else {
             state.setLightsOn(powerOn && "On".equals(safe(state.getLightsMode())));
         }
 
-        // 🔧 Other actuators
+        // 🌍 Other devices (no Auto logic yet)
         state.setPumpsOn(powerOn && "On".equals(safe(state.getPumpsMode())));
         state.setBlowersOn(powerOn && "On".equals(safe(state.getBlowersMode())));
         state.setFansOn(powerOn && "On".equals(safe(state.getFansMode())));
@@ -146,14 +169,6 @@ public class SystemStateService {
         state.setHeaterOn(powerOn && "On".equals(safe(state.getHeaterMode())));
         state.setAirVentsOn(powerOn && "On".equals(safe(state.getAirVentsMode())));
 
-        // 🧠 Debug output
-        System.out.println("🧠 lightsMode: " + state.getLightsMode());
-        System.out.println("🕒 now: " + LocalTime.now());
-        System.out.println("🕒 onTime: " + LocalTime.of(state.getAutoOnHour(), state.getAutoOnMinute()));
-        System.out.println("🕒 offTime: " + LocalTime.of(state.getAutoOffHour(), state.getAutoOffMinute()));
-        System.out.println("💡 lightsOn: " + state.isLightsOn());
-
-        // 🚫 Disable Auto modes if no cycle is active
         if (!cycleDefined) {
             disableAutoModes(state);
         }
@@ -187,5 +202,29 @@ public class SystemStateService {
     public SystemState save(SystemState state) {
         return repository.save(state);
     }
-}
 
+    // 🌱 Persist cycle state snapshot
+    public void logCycleState(SystemState state) {
+        CycleLog log = new CycleLog();
+        log.setCycleType(state.isGrowCycle() ? "Grow" : (state.isBloomCycle() ? "Bloom" : "None"));
+        log.setUpdatedTs(LocalDateTime.now());
+        log.setActive(state.isGrowCycle() || state.isBloomCycle());
+        log.setCo2(false);
+
+        log.setPowerOnTime(state.getAutoOnTime());
+        log.setPowerOffTime(state.getAutoOffTime());
+
+        log.setCycleDurationDays(state.getCycleDaysDuration() != null ? state.getCycleDaysDuration() : 0);
+        log.setSpectrum(state.getColorFreq());
+
+        log.setTemp(state.getTemperature() != null ? state.getTemperature() : 0.0);
+        log.setEc(state.getEc() != null ? state.getEc() : 0.0);
+        log.setPh(state.getPh() != null ? state.getPh() : 0.0);
+
+        cycleLogRepository.save(log);
+    }
+
+    public List<CycleLog> getRecentCycleLogs() {
+        return cycleLogRepository.findTop50ByOrderByUpdatedTsDesc();
+    }
+}

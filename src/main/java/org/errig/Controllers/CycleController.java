@@ -11,46 +11,29 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalTime;
 
 @Controller
-@RequestMapping("/settings")
-public class SettingsController {
+@RequestMapping("/cycles")
+public class CycleController {
 
     @Autowired
     private SystemStateService systemStateService;
-
     @Autowired
     private CycleManager cycleManager;
 
-    // Main settings dashboard
+
+    // Show recent cycle logs
     @GetMapping("")
-    public String settingsMain() {
-        return "settings/settingsMain";
+    public String cycles(Model model) {
+        model.addAttribute("cycleLogs", systemStateService.getRecentCycleLogs());
+        return "history/cycleLogHistory";
     }
-
-    // Cycle settings page
-    @GetMapping("/cycle")
-    public String cycleSettings(Model model) {
-        SystemState state = systemStateService.getLatestState();
-        model.addAttribute("systemState", state);
-        return "settings/cycleSettings";
-    }
-
-    // Device settings page (future expansion)
-    @GetMapping("/device")
-    public String deviceSettings() {
-        return "settings/deviceSettings";
-    }
-
-    // 🔧 Handle cycle updates (from form submit)
     @PostMapping("/cycle/update")
     public String updateCycle(@RequestParam String cycleType,
                               @RequestParam LocalTime startTime,
                               @RequestParam LocalTime endTime,
                               @RequestParam(defaultValue = "false") boolean constrain) {
 
-        // 🔄 Load current state
         SystemState state = systemStateService.getLatestState();
 
-        // 🌱 Set cycle type
         if ("grow".equalsIgnoreCase(cycleType)) {
             state.setGrowCycle(true);
             state.setBloomCycle(false);
@@ -62,20 +45,43 @@ public class SettingsController {
             state.setBloomCycle(false);
         }
 
-        // 🕒 Update cycle times
         state.setAutoOnTime(startTime);
         state.setAutoOffTime(endTime);
 
-        // ⚙️ Apply constraint logic
+        // ✅ Use the injected bean, not the class
         cycleManager.applyCycleProfile(state, constrain);
 
-        // 💾 Persist SystemState
+        systemStateService.applyModes(state);
         systemStateService.save(state);
-
-        // 📝 Log into CycleLog history
         systemStateService.logCycleState(state);
 
-        // 🔙 Redirect back to settings page
         return "redirect:/settings/cycle";
+    }
+
+
+
+    // Activate a cycle (delegates to service)
+    @PostMapping("/activate")
+    public String activateCycle(@RequestParam String cycleType) {
+        SystemState state = systemStateService.getLatestState();
+
+        if ("Grow".equalsIgnoreCase(cycleType)) {
+            state.setGrowCycle(true);
+            state.setBloomCycle(false);
+        } else if ("Bloom".equalsIgnoreCase(cycleType)) {
+            state.setGrowCycle(false);
+            state.setBloomCycle(true);
+        }
+
+        systemStateService.startCycle(state);
+        return "redirect:/history/cycles";
+    }
+
+    // 🛑 Stop the current cycle (delegates to service)
+    @PostMapping("/stop")
+    public String stopCycle() {
+        SystemState state = systemStateService.getLatestState();
+        systemStateService.stopCycle(state);
+        return "redirect:/history/cycles";
     }
 }
