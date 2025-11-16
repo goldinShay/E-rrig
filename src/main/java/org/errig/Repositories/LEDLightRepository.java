@@ -1,6 +1,6 @@
 package org.errig.Repositories;
 
-import org.errig.Entities.LEDLight;
+import org.errig.Entities.Actuators.LEDLight;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

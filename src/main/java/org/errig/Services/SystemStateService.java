@@ -1,6 +1,6 @@
 package org.errig.Services;
 
-import org.errig.Entities.*;
+import org.errig.Entities.Actuators.*;
 import org.errig.Repositories.CycleLogRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
@@ -41,12 +41,19 @@ public class SystemStateService {
             state.setWaterLevelStatus(resolveWaterLevelStatus(latestLog.getWaterLevel()));
             state.setCurrentPowerUse(latestLog.getPowerUse());
 
+            // Apply cycle profile if a cycle is active
             cycleManager.applyCycleProfile(state, true);
         } else {
             state.setGeneralPower(false);
             state.setWaterLevelStatus("Too Low");
             state.setCurrentPowerUse(0.0);
         }
+
+        // ✅ Always re‑evaluate Auto/Manual modes against current time
+        applyModes(state);
+
+        // ✅ Persist the updated state so it doesn’t “forget”
+        repository.save(state);
 
         return state;
     }
@@ -82,9 +89,22 @@ public class SystemStateService {
         state.setEc(1.0);
         state.setPh(7.0);
 
-        // ⏰ Default cycle times
-        state.setAutoOnTime(LocalTime.of(6, 0));   // 06:00
-        state.setAutoOffTime(LocalTime.of(18, 0)); // 18:00
+        // ⏰ Load cycle times from latest CycleLog if available
+        CycleLog latestLog = cycleLogRepository.findTopByOrderByUpdatedTsDesc();
+        if (latestLog != null) {
+            state.setAutoOnTime(latestLog.getPowerOnTime());
+            state.setAutoOffTime(latestLog.getPowerOffTime());
+            state.setCycleDaysDuration(latestLog.getCycleDurationDays());
+            state.setColorFreq(latestLog.getSpectrum());
+            state.setTemperature(latestLog.getTemp());
+            state.setEc(latestLog.getEc());
+            state.setPh(latestLog.getPh());
+        } else {
+            // Fallback defaults only if no cycle log exists
+            state.setAutoOnTime(LocalTime.of(6, 0));
+            state.setAutoOffTime(LocalTime.of(18, 0));
+            state.setCycleDaysDuration(28);
+        }
 
         return state;
     }

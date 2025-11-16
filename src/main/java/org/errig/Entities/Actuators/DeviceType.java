@@ -1,4 +1,4 @@
-package org.errig.Entities;
+package org.errig.Entities.Actuators;
 
 public enum DeviceType {
     LEDLight("LED"),

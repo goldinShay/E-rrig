@@ -1,6 +1,6 @@
 package org.errig.cycles;
 
-import org.errig.Entities.SystemState;
+import org.errig.Entities.Actuators.SystemState;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;

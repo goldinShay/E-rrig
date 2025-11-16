@@ -1,4 +1,4 @@
-package org.errig.Entities;
+package org.errig.Entities.Actuators;
 
 public enum LEDModel {
     MARS_HYDRO_TSL_2000(300, 240, 1.31, "140x90 cm", 2.6, 50304),

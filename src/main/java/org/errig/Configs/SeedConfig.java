@@ -1,6 +1,6 @@
 package org.errig.Configs;
 
-import org.errig.Entities.CycleLog;
+import org.errig.Entities.Actuators.CycleLog;
 import org.errig.Repositories.CycleLogRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

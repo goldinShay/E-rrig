@@ -1,6 +1,6 @@
 package org.errig.Services;
 
-import org.errig.Entities.SensorLog;
+import org.errig.Entities.Actuators.SensorLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

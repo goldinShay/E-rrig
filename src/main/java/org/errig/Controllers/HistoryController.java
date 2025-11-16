@@ -1,7 +1,7 @@
 package org.errig.Controllers;
 
-import org.errig.Entities.SensorLog;
-import org.errig.Entities.CycleLog;
+import org.errig.Entities.Actuators.SensorLog;
+import org.errig.Entities.Actuators.CycleLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.CycleLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;

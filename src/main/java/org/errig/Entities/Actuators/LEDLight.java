@@ -1,4 +1,4 @@
-package org.errig.Entities;
+package org.errig.Entities.Actuators;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -1,6 +1,6 @@
 package org.errig.Utilities;
 
-import org.errig.Entities.DeviceType;
+import org.errig.Entities.Actuators.DeviceType;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
 import java.util.Map;
