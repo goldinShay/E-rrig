@@ -1,4 +1,4 @@
-package org.errig.Entities;
+package org.errig.Entities.Actuators;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;

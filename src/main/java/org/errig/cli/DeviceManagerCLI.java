@@ -1,7 +1,7 @@
 package org.errig.cli;
 
-import org.errig.Entities.LEDLight;
-import org.errig.Entities.SystemState;
+import org.errig.Entities.Actuators.LEDLight;
+import org.errig.Entities.Actuators.SystemState;
 import org.errig.Repositories.LEDLightRepository;
 import org.errig.Services.SystemStateService;
 import org.errig.cli.device.AddDeviceCLI;

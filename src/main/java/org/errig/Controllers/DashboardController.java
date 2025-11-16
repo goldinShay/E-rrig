@@ -1,9 +1,9 @@
 package org.errig.Controllers;
 
 import jakarta.validation.Valid;
-import org.errig.Entities.LEDLight;
-import org.errig.Entities.SensorLog;
-import org.errig.Entities.SystemState;
+import org.errig.Entities.Actuators.LEDLight;
+import org.errig.Entities.Actuators.SensorLog;
+import org.errig.Entities.Actuators.SystemState;
 import org.errig.Repositories.LEDLightRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;

@@ -1,6 +1,6 @@
 package org.errig.Controllers;
 
-import org.errig.Entities.SensorLog;
+import org.errig.Entities.Actuators.SensorLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
 import org.errig.Services.SystemStateService;

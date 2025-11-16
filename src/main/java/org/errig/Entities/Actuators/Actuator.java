@@ -1,4 +1,4 @@
-package org.errig.Entities;
+package org.errig.Entities.Actuators;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
