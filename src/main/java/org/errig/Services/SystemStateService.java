@@ -1,6 +1,8 @@
 package org.errig.Services;
 
 import org.errig.Entities.Actuators.*;
+import org.errig.Entities.Sensors.SensorLog;
+import org.errig.Entities.SystemState;
 import org.errig.Repositories.CycleLogRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
@@ -26,9 +28,12 @@ public class SystemStateService {
 
     @Autowired
     private CycleLogRepository cycleLogRepository;
+    @Autowired
+    private PowerConsumptionManager powerConsumptionManager;
+
 
     public SystemState getLatestState() {
-        SystemState state = repository.findTopByOrderByIdDesc();
+        SystemState state = repository.findTopByOrderByIdDesc().orElse(null);
         SensorLog latestLog = sensorLogRepository.findTopByOrderByTimestampDesc();
 
         if (state == null) {
@@ -39,9 +44,13 @@ public class SystemStateService {
         if (latestLog != null) {
             state.setGeneralPower(true);
             state.setWaterLevelStatus(resolveWaterLevelStatus(latestLog.getWaterLevel()));
-            state.setCurrentPowerUse(latestLog.getPowerUse());
 
-            // Apply cycle profile if a cycle is active
+            // ❌ old: state.setCurrentPowerUse(latestLog.getPowerUse());
+            // ✅ new: calculate real total
+            double total = powerConsumptionManager.getTotalConsumption(state);
+            state.setCurrentPowerUse(total);
+            powerConsumptionManager.logConsumption(state);
+
             cycleManager.applyCycleProfile(state, true);
         } else {
             state.setGeneralPower(false);
@@ -210,8 +219,8 @@ public class SystemStateService {
 
     public void simulatePowerUse() {
         SystemState state = getLatestState();
-        double simulated = 100 + Math.random() * 400;
-        state.setCurrentPowerUse(simulated);
+        double total = powerConsumptionManager.getTotalConsumption(state);
+        state.setCurrentPowerUse(total);
         saveState(state);
     }
 
@@ -233,18 +242,23 @@ public class SystemStateService {
 
         log.setPowerOnTime(state.getAutoOnTime());
         log.setPowerOffTime(state.getAutoOffTime());
-
         log.setCycleDurationDays(state.getCycleDaysDuration() != null ? state.getCycleDaysDuration() : 0);
         log.setSpectrum(state.getColorFreq());
 
-        log.setTemp(state.getTemperature() != null ? state.getTemperature() : 0.0);
-        log.setEc(state.getEc() != null ? state.getEc() : 0.0);
-        log.setPh(state.getPh() != null ? state.getPh() : 0.0);
+        // ✅ Use recommended values from the cycle profile, not live state
+        log.setTemp(cycleManager.getRecommendedTemp());
+        log.setEc(cycleManager.getRecommendedEc());
+        log.setPh(cycleManager.getRecommendedPh());
 
         cycleLogRepository.save(log);
     }
 
     public List<CycleLog> getRecentCycleLogs() {
         return cycleLogRepository.findTop50ByOrderByUpdatedTsDesc();
+    }
+    public SystemState getCurrentState() {
+        return repository.findTopByOrderByUpdatedTsDesc()
+                .orElseGet(SystemState::new);
+        // fallback: empty state if none exists
     }
 }

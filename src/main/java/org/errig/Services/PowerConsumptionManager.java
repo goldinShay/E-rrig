@@ -1,0 +1,56 @@
+package org.errig.Services;
+
+import org.errig.Entities.Actuators.LEDLight;
+import org.errig.Entities.Sensors.SensorLog;
+import org.errig.Entities.SystemState;
+import org.errig.Repositories.SensorLogRepository;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+
+@Component
+public class PowerConsumptionManager {
+
+    private final SensorLogRepository sensorLogRepository;
+
+    public PowerConsumptionManager(SensorLogRepository sensorLogRepository) {
+        this.sensorLogRepository = sensorLogRepository;
+    }
+
+    /**
+     * Compute total power consumption (W) based on a given SystemState.
+     */
+    public double getTotalConsumption(SystemState state) {
+        double total = 0.0;
+
+        if (state.getLedLights() != null) {
+            for (LEDLight light : state.getLedLights()) {
+                if (Boolean.TRUE.equals(light.isOn())) {
+                    total += light.getPowerConsumption();
+                }
+            }
+        }
+
+        // TODO: add pumps, fans, etc.
+        return total;
+    }
+
+    /**
+     * Log the current power consumption into SensorLog.
+     */
+    public void logConsumption(SystemState state) {
+        double total = getTotalConsumption(state);
+
+        SensorLog log = new SensorLog();
+        log.setTimestamp(LocalDateTime.now());
+        log.setPowerUse(total);
+
+        // 🔢 Auto-increment messageNumber
+        Long lastNumber = sensorLogRepository.findTopByOrderByMessageNumberDesc()
+                .map(SensorLog::getMessageNumber)
+                .orElse(0L);
+        log.setMessageNumber(lastNumber + 1);
+
+        sensorLogRepository.save(log);
+    }
+}

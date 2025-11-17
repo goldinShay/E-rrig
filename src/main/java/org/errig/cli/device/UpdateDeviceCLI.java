@@ -2,7 +2,7 @@ package org.errig.cli.device;
 
 import org.errig.Entities.Actuators.LEDLight;
 import org.errig.Entities.Actuators.LEDModel;
-import org.errig.Entities.Actuators.SystemState;
+import org.errig.Entities.SystemState;
 import org.errig.Services.SystemStateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

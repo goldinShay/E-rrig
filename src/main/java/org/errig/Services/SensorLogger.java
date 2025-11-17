@@ -1,6 +1,6 @@
 package org.errig.Services;
 
-import org.errig.Entities.Actuators.SensorLog;
+import org.errig.Entities.Sensors.SensorLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,7 +25,6 @@ public class SensorLogger {
             Long nextNumber = (lastNumber != null ? lastNumber : 0) + 1;
 
             SensorLog log = new SensorLog();
-            log.setMessageId(UUID.randomUUID().toString());
             log.setMessageNumber(nextNumber);
             log.setTimestamp(LocalDateTime.now());
 

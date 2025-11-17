@@ -1,6 +1,8 @@
-package org.errig.Entities.Actuators;
+package org.errig.Entities;
 
 import jakarta.persistence.*;
+import org.errig.Entities.Actuators.LEDLight;
+
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -46,6 +48,17 @@ public class SystemState {
     private Double temperature;   // in °C
     private Double ec;            // Electrical conductivity
     private Double ph;            // Acidity/alkalinity
+    private java.time.LocalDateTime updatedTs;
+
+    @PrePersist
+    @PreUpdate
+    public void touch() {
+        this.updatedTs = java.time.LocalDateTime.now();
+    }
+
+    public LocalDateTime getUpdatedTs() { return updatedTs; }
+    public void setUpdatedTs(LocalDateTime updatedTs) { this.updatedTs = updatedTs; }
+
 
 
     // Real-time actuator states
