@@ -59,7 +59,8 @@ public class SystemState {
     public LocalDateTime getUpdatedTs() { return updatedTs; }
     public void setUpdatedTs(LocalDateTime updatedTs) { this.updatedTs = updatedTs; }
 
-
+    private Double externalAirTemp;
+    private double airTemp;          // internal air temp
 
     // Real-time actuator states
     @Column(nullable = true)
@@ -177,4 +178,8 @@ public class SystemState {
 
     public Double getPh() { return ph; }
     public void setPh(Double ph) { this.ph = ph; }
+    public double getExternalAirTemp() { return externalAirTemp; }
+    public void setExternalAirTemp(double externalAirTemp) { this.externalAirTemp = externalAirTemp; }
+    public double getAirTemp() { return airTemp; }
+    public void setAirTemp(double airTemp) { this.airTemp = airTemp; }
 }

@@ -7,38 +7,71 @@ import java.time.LocalDateTime;
 @Table(name = "sensor_log")
 public class SensorLog {
 
+    // 🔑 Primary key
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment primary key
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "message_number", unique = true)
-    private Long messageNumber; // Sequential, human-readable number
+    // 📜 Sequential message number
+    @Column(name = "message_number")
+    private Long messageNumber;
 
+    // 🕒 Timestamp of log entry
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
 
-    // System states
+    // 🌱 System states
+    @Column(name = "grow_bloom")
     private boolean growBloom;
+
+    @Column(name = "lights_on")
     private boolean lightsOn;
+
+    @Column(name = "pump_active")
     private boolean pumpActive;
+
+    @Column(name = "fan_active")
     private boolean fanActive;
+
+    @Column(name = "blower_active")
     private boolean blowerActive;
+
+    @Column(name = "heater_active")
     private boolean heaterActive;
 
-    // Power and environment
+    // ⚡ Power and environment
+    @Column(name = "power_use")
     private double powerUse;
-    private double airTemp;
+
+    @Column(name = "air_temp")
+    private double airTemp; // internal air temp
+
+    @Column(name = "external_air_temp")
+    private double externalAirTemp; // new external temp
+
+    @Column(name = "air_hum")
     private double airHum;
+
+    @Column(name = "air_pres")
     private double airPres;
+
+    @Column(name = "co2ppm")
     private double CO2ppm;
 
-    // Water metrics
+    // 💧 Water metrics
+    @Column(name = "water_temp")
     private double waterTemp;
+
+    @Column(name = "waterph", nullable = false)
     private double waterPH;
+
+    @Column(name = "waterec", nullable = false)
     private double waterEC;
+
+    @Column(name = "water_level")
     private double waterLevel;
 
-    // Getters and setters
+    // --- Getters & Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -72,6 +105,9 @@ public class SensorLog {
     public double getAirTemp() { return airTemp; }
     public void setAirTemp(double airTemp) { this.airTemp = airTemp; }
 
+    public double getExternalAirTemp() { return externalAirTemp; }
+    public void setExternalAirTemp(double externalAirTemp) { this.externalAirTemp = externalAirTemp; }
+
     public double getAirHum() { return airHum; }
     public void setAirHum(double airHum) { this.airHum = airHum; }
 
@@ -92,4 +128,23 @@ public class SensorLog {
 
     public double getWaterLevel() { return waterLevel; }
     public void setWaterLevel(double waterLevel) { this.waterLevel = waterLevel; }
+
+    @Override
+    public String toString() {
+        return "SensorLog{" +
+                "id=" + id +
+                ", messageNumber=" + messageNumber +
+                ", timestamp=" + timestamp +
+                ", airTemp=" + airTemp +
+                ", externalAirTemp=" + externalAirTemp +
+                ", airHum=" + airHum +
+                ", airPres=" + airPres +
+                ", CO2ppm=" + CO2ppm +
+                ", waterTemp=" + waterTemp +
+                ", waterPH=" + waterPH +
+                ", waterEC=" + waterEC +
+                ", waterLevel=" + waterLevel +
+                ", powerUse=" + powerUse +
+                '}';
+    }
 }

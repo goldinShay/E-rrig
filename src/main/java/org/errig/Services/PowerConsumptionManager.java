@@ -34,23 +34,4 @@ public class PowerConsumptionManager {
         // TODO: add pumps, fans, etc.
         return total;
     }
-
-    /**
-     * Log the current power consumption into SensorLog.
-     */
-    public void logConsumption(SystemState state) {
-        double total = getTotalConsumption(state);
-
-        SensorLog log = new SensorLog();
-        log.setTimestamp(LocalDateTime.now());
-        log.setPowerUse(total);
-
-        // 🔢 Auto-increment messageNumber
-        Long lastNumber = sensorLogRepository.findTopByOrderByMessageNumberDesc()
-                .map(SensorLog::getMessageNumber)
-                .orElse(0L);
-        log.setMessageNumber(lastNumber + 1);
-
-        sensorLogRepository.save(log);
-    }
 }
