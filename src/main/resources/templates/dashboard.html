@@ -9,7 +9,7 @@
     body {
         margin: 0;
         padding: 0;
-        font-family: sans-serif;
+        font-family: "Segoe UI", Arial, sans-serif;
         background-color: #111;
         color: #eee;
     }
@@ -20,56 +20,97 @@
     }
 
     .left-panel {
-        width: 60%;
+        flex: 3;
         padding: 30px;
     }
 
     .right-panel {
-        width: 40%;
+        flex: 2;
         padding: 30px;
-        background-color: #222;
+        background-color: #1c1c1c;
+        border-left: 1px solid #333;
     }
 
+    /* Status indicator lights */
     .status-light {
         display: inline-block;
         width: 14px;
         height: 14px;
         border-radius: 50%;
         margin-right: 8px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.6);
     }
 
-    .green { background-color: #4CAF50; }
-    .red { background-color: #f44336; }
-    .blue { background-color: #2196F3; }
+    .green  { background-color: #4CAF50; }
+    .red    { background-color: #f44336; }
+    .blue   { background-color: #2196F3; }
     .orange { background-color: #FF9800; }
 
+    /* Control groups */
     .control-group {
-        margin-bottom: 20px;
-    }
-
-    .mode-button {
-        background-color: #333;
-        color: #eee;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-
-    .mode-button:hover {
-        background-color: #555;
-    }
-
-    .mode-button.active {
-        background-color: #4CAF50;
-        color: #fff;
+        margin-bottom: 24px;
     }
 
     .device-control {
         margin-bottom: 20px;
     }
 
+    /* Mode buttons */
+    .mode-button {
+        background-color: #2a2a2a;
+        color: #eee;
+        border: 1px solid #444;
+        padding: 8px 18px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+    .mode-button:hover {
+        background-color: #444;
+        transform: scale(1.05);
+    }
+
+    .mode-button.active {
+        background-color: #4CAF50;
+        color: #fff;
+        border-color: #4CAF50;
+    }
+
+    /* Navigation bar above ticker */
+    .nav-bar {
+  position: fixed;
+  bottom: 40px; /* sits just above ticker */
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(0,0,0,0.7);
+  padding: 8px 0;
+  z-index: 9;
+}
+
+.nav-bar button {
+  background: #222;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* space between icon and text */
+  transition: background 0.3s, transform 0.2s;
+}
+
+.nav-bar button:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+    /* Ticker */
     .ticker {
         position: fixed;
         bottom: 0;
@@ -82,10 +123,11 @@
         display: flex;
         align-items: center;
         z-index: 10;
+        border-top: 1px solid #333;
     }
 
     @keyframes scroll-left {
-        0% { transform: translateX(0); }
+        0%   { transform: translateX(0); }
         100% { transform: translateX(-100%); }
     }
 </style>
@@ -99,19 +141,22 @@
         <div class="device-control">
             <label>Master Power:</label>
             <div class="mode-switch">
-                <span th:classappend="${state.generalPower} ? 'status-light green' : 'status-light red'"></span>
+                <!-- ✅ Green if power > 0, red if 0 -->
+                <span th:classappend="${latestLog != null and latestLog.powerUse > 0} ? 'status-light green' : 'status-light red'"></span>
             </div>
         </div>
 
         <div class="device-control">
             <label>Water Level:</label>
             <div class="mode-switch">
-        <span th:switch="${state.waterLevelStatus}">
-            <span th:case="'Too High'" class="status-light blue"></span>
-            <span th:case="'Optimal'" class="status-light green"></span>
-            <span th:case="'Low'" class="status-light orange"></span>
-            <span th:case="'Too Low'" class="status-light red"></span>
+        <span th:classappend="
+            ${latestLog != null and latestLog.waterLevel >= 90} ? 'status-light blue' :
+            (${latestLog != null and latestLog.waterLevel >= 75} ? 'status-light green' :
+            (${latestLog != null and latestLog.waterLevel >= 31} ? 'status-light orange' :
+            'status-light red'))">
         </span>
+                <!-- Optional numeric display -->
+                <span th:text="${latestLog != null ? latestLog.waterLevel + '%': '--'}"></span>
             </div>
         </div>
 
@@ -119,7 +164,9 @@
         <!-- 🌿 System State Form -->
         <!-- 💡 Lights Control -->
         <!-- 💡 LED Lights Control -->
-        <div th:each="light : ${state.ledLights}" class="device-control" style="display: flex; align-items: center; gap: 20px;">
+        <div th:each="light : ${ledLights}"
+             class="device-control"
+             style="display: flex; align-items: center; gap: 20px;">
             <form th:action="@{/dashboard/updateLight}" method="post" style="display: flex; align-items: center; gap: 10px;">
                 <input type="hidden" name="uniqueId" th:value="${light.deviceID}" />
                 <label th:text="${light.name}">Light Name</label>
@@ -268,23 +315,66 @@
     </div>
 </div>
 
+<div class="nav-bar">
+    <button onclick="location.href='/welcome'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 .5l7 7V15a1 1 0 0 1-1 1h-4v-4H6v4H2a1 1 0 0 1-1-1V7.5l7-7z"/>
+        </svg>
+        Home
+    </button>
+
+    <button onclick="location.href='/history'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2 2h12v2H2V2zm0 4h12v2H2V6zm0 4h12v2H2v-2zm0 4h12v2H2v-2z"/>
+        </svg>
+        History
+    </button>
+
+    <button onclick="location.href='/settings/cycle'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M9.405 1.05a1 1 0 0 0-2.81 0l-.5 1.5a1 1 0 0 1-.95.69H3a1 1 0 0 0-1 1v1.145a1 1 0 0 1-.69.95l-1.5.5a1 1 0 0 0 0 1.9l1.5.5a1 1 0 0 1 .69.95V12a1 1 0 0 0 1 1h1.145a1 1 0 0 1 .95.69l.5 1.5a1 1 0 0 0 1.9 0l.5-1.5a1 1 0 0 1 .95-.69H12a1 1 0 0 0 1-1v-1.145a1 1 0 0 1 .69-.95l1.5-.5a1 1 0 0 0 0-1.9l-1.5-.5a1 1 0 0 1-.69-.95V4a1 1 0 0 0-1-1h-1.145a1 1 0 0 1-.95-.69l-.5-1.5zM8 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
+        </svg>
+        Settings
+    </button>
+</div>
+
+
 <div class="ticker">
     <div class="ticker-data" th:if="${latestLog != null}">
         MSG#: <span th:text="${latestLog.messageNumber}">123</span> |
         Date: <span th:text="${#temporals.format(latestLog.timestamp, 'MM/dd/yyyy')}">11/02/2025</span> |
         Time: <span th:text="${#temporals.format(latestLog.timestamp, 'HH:mm')}">20:19</span> |
-        Air Temp: <span th:text="${latestLog.airTemp} + '°C'">25.3°C</span> |
-        Air Hum: <span th:text="${latestLog.airHum} + '%'">58%</span> |
-        Pressure: <span th:text="${latestLog.airPres} + ' hPa'">1012.0 hPa</span> |
-        CO₂: <span th:text="${latestLog.CO2ppm} + ' ppm'">420.0 ppm</span> |
-        Water Temp: <span th:text="${latestLog.waterTemp} + '°C'">21.5°C</span> |
-        pH: <span th:text="${latestLog.waterPH}">6.3</span> |
-        EC: <span th:text="${latestLog.waterEC} + ' mS/cm'">1.8 mS/cm</span>
+
+        External Air Temp:
+        <span th:text="${latestLog.externalAirTemp != null ? #numbers.formatDecimal(latestLog.externalAirTemp, 1, 2) : '0.0'}">0.0</span>°C |
+
+        Internal Air Temp:
+        <span th:text="${latestLog.airTemp != null ? #numbers.formatDecimal(latestLog.airTemp, 1, 2) : '0.0'}">0.00</span>°C |
+
+        Air Hum:
+        <span th:text="${latestLog.airHum != null ? latestLog.airHum : '0'}">58</span>% |
+
+        Pressure:
+        <span th:text="${latestLog.airPres != null ? latestLog.airPres : '0'}">1012.0</span> hPa |
+
+        CO₂:
+        <span th:text="${latestLog.CO2ppm != null ? latestLog.CO2ppm : '0'}">420.0</span> ppm |
+
+        Water Temp:
+        <span th:text="${latestLog.waterTemp != null ? latestLog.waterTemp : '0'}">21.5</span>°C |
+
+        pH:
+        <span th:text="${latestLog.waterPH != null ? latestLog.waterPH : '0'}">6.3</span> |
+
+        EC:
+        <span th:text="${latestLog.waterEC != null ? latestLog.waterEC : '0'}">1.8</span> mS/cm
     </div>
+
     <div class="ticker-data" th:if="${latestLog == null}">
         Waiting for first sensor log from E-rrig system...
     </div>
 </div>
+
 <!-- 🔐 Password Modal -->
 <div id="passwordModal" style="
     display: none;

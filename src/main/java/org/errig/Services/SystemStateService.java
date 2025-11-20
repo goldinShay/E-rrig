@@ -1,11 +1,12 @@
 package org.errig.Services;
 
 import org.errig.Entities.Actuators.*;
+import org.errig.Entities.Sensors.SensorLog;
+import org.errig.Entities.SystemState;
 import org.errig.Repositories.CycleLogRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
 import org.errig.cycles.CycleManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,20 +16,29 @@ import java.util.List;
 @Service
 public class SystemStateService {
 
-    @Autowired
-    private SystemStateRepository repository;
+    private final SystemStateRepository repository;
+    private final SensorLogRepository sensorLogRepository;
+    private final CycleManager cycleManager;
+    private final CycleLogRepository cycleLogRepository;
+    private final PowerConsumptionManager powerConsumptionManager;
+    private final WeatherService weatherService;
 
-    @Autowired
-    private SensorLogRepository sensorLogRepository;
-
-    @Autowired
-    private CycleManager cycleManager;
-
-    @Autowired
-    private CycleLogRepository cycleLogRepository;
+    public SystemStateService(SystemStateRepository repository,
+                              SensorLogRepository sensorLogRepository,
+                              CycleManager cycleManager,
+                              CycleLogRepository cycleLogRepository,
+                              PowerConsumptionManager powerConsumptionManager,
+                              WeatherService weatherService) {
+        this.repository = repository;
+        this.sensorLogRepository = sensorLogRepository;
+        this.cycleManager = cycleManager;
+        this.cycleLogRepository = cycleLogRepository;
+        this.powerConsumptionManager = powerConsumptionManager;
+        this.weatherService = weatherService;
+    }
 
     public SystemState getLatestState() {
-        SystemState state = repository.findTopByOrderByIdDesc();
+        SystemState state = repository.findTopByOrderByIdDesc().orElse(null);
         SensorLog latestLog = sensorLogRepository.findTopByOrderByTimestampDesc();
 
         if (state == null) {
@@ -39,9 +49,10 @@ public class SystemStateService {
         if (latestLog != null) {
             state.setGeneralPower(true);
             state.setWaterLevelStatus(resolveWaterLevelStatus(latestLog.getWaterLevel()));
-            state.setCurrentPowerUse(latestLog.getPowerUse());
 
-            // Apply cycle profile if a cycle is active
+            double total = powerConsumptionManager.getTotalConsumption(state);
+            state.setCurrentPowerUse(total);
+
             cycleManager.applyCycleProfile(state, true);
         } else {
             state.setGeneralPower(false);
@@ -49,10 +60,29 @@ public class SystemStateService {
             state.setCurrentPowerUse(0.0);
         }
 
-        // ✅ Always re‑evaluate Auto/Manual modes against current time
-        applyModes(state);
+        // 🌱 Hydrate cycle info from latest CycleLog
+        CycleLog activeCycle = cycleLogRepository.findTopByOrderByUpdatedTsDesc();
+        if (activeCycle != null && activeCycle.isActive()) {
+            state.setGrowCycle("Grow".equalsIgnoreCase(activeCycle.getCycleType()));
+            state.setBloomCycle("Bloom".equalsIgnoreCase(activeCycle.getCycleType()));
+            state.setCycleStartTime(activeCycle.getUpdatedTs());
+            state.setAutoOnTime(activeCycle.getPowerOnTime());
+            state.setAutoOffTime(activeCycle.getPowerOffTime());
+            state.setCycleDaysDuration(activeCycle.getCycleDurationDays());
+            state.setColorFreq(activeCycle.getSpectrum());
+            state.setTemperature(activeCycle.getTemp());
+            state.setEc(activeCycle.getEc());
+            state.setPh(activeCycle.getPh());
+        }
 
-        // ✅ Persist the updated state so it doesn’t “forget”
+        // 🌤️ External air temp from weather API
+        double externalTemp = weatherService.fetchExternalAirTemp();
+        state.setExternalAirTemp(externalTemp);
+
+        // 🌡️ Internal air temp simulated until sensor hardware is ready
+        state.setAirTemp(20 + Math.random() * 5);
+
+        applyModes(state);
         repository.save(state);
 
         return state;
@@ -84,12 +114,10 @@ public class SystemStateService {
         state.setHeaterOn(false);
         state.setAirVentsOn(false);
 
-        // 🌡️ Environmental defaults
         state.setTemperature(20.0);
         state.setEc(1.0);
         state.setPh(7.0);
 
-        // ⏰ Load cycle times from latest CycleLog if available
         CycleLog latestLog = cycleLogRepository.findTopByOrderByUpdatedTsDesc();
         if (latestLog != null) {
             state.setAutoOnTime(latestLog.getPowerOnTime());
@@ -100,7 +128,6 @@ public class SystemStateService {
             state.setEc(latestLog.getEc());
             state.setPh(latestLog.getPh());
         } else {
-            // Fallback defaults only if no cycle log exists
             state.setAutoOnTime(LocalTime.of(6, 0));
             state.setAutoOffTime(LocalTime.of(18, 0));
             state.setCycleDaysDuration(28);
@@ -119,7 +146,6 @@ public class SystemStateService {
     // 🚀 Start a cycle
     public void startCycle(SystemState state) {
         state.setCycleStartTime(LocalDateTime.now());
-
         cycleManager.applyCycleProfile(state, true);
 
         state.setLightsMode("Auto");
@@ -130,8 +156,6 @@ public class SystemStateService {
 
         applyModes(state);
         saveState(state);
-
-        // Persist the activation
         logCycleState(state);
     }
 
@@ -143,8 +167,6 @@ public class SystemStateService {
 
         disableAutoModes(state);
         saveState(state);
-
-        // Persist the deactivation
         logCycleState(state);
     }
 
@@ -152,7 +174,6 @@ public class SystemStateService {
         boolean cycleDefined = state.isGrowCycle() || state.isBloomCycle();
         boolean powerOn = Boolean.TRUE.equals(state.isGeneralPower());
 
-        // 🌱 Lights Auto Mode
         if ("Auto".equals(safe(state.getLightsMode())) && cycleDefined && powerOn) {
             LocalTime now = LocalTime.now();
             LocalTime onTime = state.getAutoOnTime();
@@ -161,10 +182,8 @@ public class SystemStateService {
             boolean withinWindow = false;
             if (onTime != null && offTime != null) {
                 if (onTime.isBefore(offTime) || onTime.equals(offTime)) {
-                    // Normal window (e.g. 06:00 → 18:00)
                     withinWindow = !now.isBefore(onTime) && !now.isAfter(offTime);
                 } else {
-                    // Overnight window (e.g. 18:00 → 06:00 next day)
                     withinWindow = !now.isBefore(onTime) || !now.isAfter(offTime);
                 }
             }
@@ -181,7 +200,6 @@ public class SystemStateService {
             state.setLightsOn(powerOn && "On".equals(safe(state.getLightsMode())));
         }
 
-        // 🌍 Other devices (no Auto logic yet)
         state.setPumpsOn(powerOn && "On".equals(safe(state.getPumpsMode())));
         state.setBlowersOn(powerOn && "On".equals(safe(state.getBlowersMode())));
         state.setFansOn(powerOn && "On".equals(safe(state.getFansMode())));
@@ -210,8 +228,8 @@ public class SystemStateService {
 
     public void simulatePowerUse() {
         SystemState state = getLatestState();
-        double simulated = 100 + Math.random() * 400;
-        state.setCurrentPowerUse(simulated);
+        double total = powerConsumptionManager.getTotalConsumption(state);
+        state.setCurrentPowerUse(total);
         saveState(state);
     }
 
@@ -223,7 +241,6 @@ public class SystemStateService {
         return repository.save(state);
     }
 
-    // 🌱 Persist cycle state snapshot
     public void logCycleState(SystemState state) {
         CycleLog log = new CycleLog();
         log.setCycleType(state.isGrowCycle() ? "Grow" : (state.isBloomCycle() ? "Bloom" : "None"));
@@ -233,18 +250,24 @@ public class SystemStateService {
 
         log.setPowerOnTime(state.getAutoOnTime());
         log.setPowerOffTime(state.getAutoOffTime());
-
         log.setCycleDurationDays(state.getCycleDaysDuration() != null ? state.getCycleDaysDuration() : 0);
         log.setSpectrum(state.getColorFreq());
 
-        log.setTemp(state.getTemperature() != null ? state.getTemperature() : 0.0);
-        log.setEc(state.getEc() != null ? state.getEc() : 0.0);
-        log.setPh(state.getPh() != null ? state.getPh() : 0.0);
+        // ✅ Use recommended values from the cycle profile, not live state
+        log.setTemp(cycleManager.getRecommendedTemp());
+        log.setEc(cycleManager.getRecommendedEc());
+        log.setPh(cycleManager.getRecommendedPh());
 
         cycleLogRepository.save(log);
     }
 
     public List<CycleLog> getRecentCycleLogs() {
         return cycleLogRepository.findTop50ByOrderByUpdatedTsDesc();
+    }
+
+    public SystemState getCurrentState() {
+        return repository.findTopByOrderByUpdatedTsDesc()
+                .orElseGet(SystemState::new);
+        // fallback: empty state if none exists
     }
 }

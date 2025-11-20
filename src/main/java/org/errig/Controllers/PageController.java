@@ -1,6 +1,6 @@
 package org.errig.Controllers;
 
-import org.errig.Entities.Actuators.SensorLog;
+import org.errig.Entities.Sensors.SensorLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
 import org.errig.Services.SystemStateService;
@@ -44,13 +44,27 @@ public class PageController {
     }
 
     private void roundSensorValues(SensorLog log) {
-        log.setAirTemp(roundToOneDecimal(log.getAirTemp()));
-        log.setAirHum(roundToOneDecimal(log.getAirHum()));
-        log.setAirPres(roundToOneDecimal(log.getAirPres()));
-        log.setCO2ppm(roundToOneDecimal(log.getCO2ppm()));
-        log.setWaterTemp(roundToOneDecimal(log.getWaterTemp()));
-        log.setWaterPH(roundToOneDecimal(log.getWaterPH()));
-        log.setWaterEC(roundToOneDecimal(log.getWaterEC()));
+        log.setAirTemp(safeRoundToOneDecimal(log.getAirTemp(), 0.0));
+        log.setAirHum(safeRoundToOneDecimal(log.getAirHum(), 0.0));
+        log.setAirPres(safeRoundToOneDecimal(log.getAirPres(), 0.0));
+        log.setCO2ppm(safeRoundToOneDecimal(log.getCO2ppm(), 0.0));
+        log.setWaterTemp(safeRoundToOneDecimal(log.getWaterTemp(), 20.0));
+        log.setWaterPH(safeRoundToOneDecimal(log.getWaterPH(), 7.0));
+        log.setWaterEC(safeRoundToOneDecimal(log.getWaterEC(), 1.0));   // force safe default
+        log.setWaterLevel(safeRoundToOneDecimal(log.getWaterLevel(), 0.0));
+        log.setExternalAirTemp(safeRoundToOneDecimal(log.getExternalAirTemp(), 0.0));
+    }
+
+    /**
+     * Always returns a primitive double, never null.
+     * Falls back to a safe default if anything goes wrong.
+     */
+    private double safeRoundToOneDecimal(Double value, double fallback) {
+        try {
+            return Math.round(value * 10.0) / 10.0;
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
     private double roundToOneDecimal(double value) {

@@ -1,6 +1,6 @@
 package org.errig.cycles;
 
-import org.errig.Entities.Actuators.SystemState;
+import org.errig.Entities.SystemState;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -16,10 +16,14 @@ public class CycleManager {
             state.setColorTemp(6500);
             state.setCycleDaysDuration(28);
 
+            // Recommended recipe values
+            state.setTemperature(getRecommendedTemp("Grow"));
+            state.setEc(getRecommendedEc("Grow"));
+            state.setPh(getRecommendedPh("Grow"));
+
             if (constrain) {
                 enforceRegime(state, 18); // 18h light window
             } else {
-                // Derive hours from current on/off times
                 state.setCycleHoursDuration(deriveHours(state.getAutoOnTime(), state.getAutoOffTime()));
             }
 
@@ -29,13 +33,17 @@ public class CycleManager {
             state.setColorTemp(3000);
             state.setCycleDaysDuration(91);
 
+            // Recommended recipe values
+            state.setTemperature(getRecommendedTemp("Bloom"));
+            state.setEc(getRecommendedEc("Bloom"));
+            state.setPh(getRecommendedPh("Bloom"));
+
             if (constrain) {
                 enforceRegime(state, 12); // 12h light window
             } else {
                 state.setCycleHoursDuration(deriveHours(state.getAutoOnTime(), state.getAutoOffTime()));
             }
         } else {
-            // No cycle selected → ensure hours reflect current window or zero
             if (state.getAutoOnTime() != null && state.getAutoOffTime() != null) {
                 state.setCycleHoursDuration(deriveHours(state.getAutoOnTime(), state.getAutoOffTime()));
             } else {
@@ -44,31 +52,47 @@ public class CycleManager {
         }
     }
 
-    /**
-     * Enforce a fixed light window length starting from the current autoOnTime.
-     * If autoOnTime is null, default to 06:00.
-     */
     private void enforceRegime(SystemState state, int onHours) {
         LocalTime start = state.getAutoOnTime() != null ? state.getAutoOnTime() : LocalTime.of(6, 0);
-        LocalTime end = start.plusHours(onHours); // wraps over midnight automatically
+        LocalTime end = start.plusHours(onHours);
 
         state.setAutoOnTime(start);
         state.setAutoOffTime(end);
         state.setCycleHoursDuration(onHours);
     }
 
-    /**
-     * Compute the duration in hours between on and off, handling overnight windows.
-     * Example: on=18:00, off=06:00 → 12 hours
-     */
     private int deriveHours(LocalTime on, LocalTime off) {
         if (on == null || off == null) return 0;
 
         Duration d = Duration.between(on, off);
         if (d.isNegative() || d.isZero()) {
-            d = d.plusHours(24); // wrap to next day
+            d = d.plusHours(24);
         }
-        // Round down to whole hours; adjust if you need finer granularity
         return (int) d.toHours();
+    }
+
+    // 🔧 New recommended values
+    public double getRecommendedTemp() {
+        return 24.0; // default if no cycle selected
+    }
+
+    public double getRecommendedTemp(String cycleType) {
+        return "Bloom".equalsIgnoreCase(cycleType) ? 26.0 : 24.0;
+    }
+
+    public double getRecommendedEc() {
+        return 1.1; // default
+    }
+
+    public double getRecommendedEc(String cycleType) {
+        return "Bloom".equalsIgnoreCase(cycleType) ? 1.2 : 1.0;
+    }
+
+    public double getRecommendedPh() {
+        return 6.0; // default
+    }
+
+    public double getRecommendedPh(String cycleType) {
+        return "Bloom".equalsIgnoreCase(cycleType) ? 6.5 : 6.8;
     }
 }

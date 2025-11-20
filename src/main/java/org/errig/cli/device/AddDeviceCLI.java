@@ -1,6 +1,7 @@
 package org.errig.cli.device;
 
 import org.errig.Entities.Actuators.*;
+import org.errig.Entities.SystemState;
 import org.errig.Services.SystemStateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

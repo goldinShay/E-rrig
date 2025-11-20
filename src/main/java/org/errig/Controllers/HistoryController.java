@@ -1,10 +1,12 @@
 package org.errig.Controllers;
 
-import org.errig.Entities.Actuators.SensorLog;
+import org.errig.Entities.Sensors.SensorLog;
 import org.errig.Entities.Actuators.CycleLog;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.CycleLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +51,7 @@ public class HistoryController {
         sensorLogRepository.deleteAll();
         return "redirect:/history/sensors";
     }
+
 
     // 🌱 Cycle log history
     @GetMapping("/cycles")

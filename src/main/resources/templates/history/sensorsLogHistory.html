@@ -3,137 +3,200 @@
 <head>
     <title>Sensor Log History</title>
     <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #fdfdfd;
-            color: #222;
-            transition: background-color 0.3s, color 0.3s;
+        :root {
+            --title-accent: #ffe58a;
+            --title-base: #ffffff;
+            --table-dark-bg: rgba(10, 30, 80, 0.35);
+            --table-dark-text: #fff3b0;
         }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #000 url('/images/darkHydro01.png') no-repeat center center fixed;
+            background-size: cover;
+            color: #eee;
+        }
+
+        h2 {
+            margin-top: 12px;
+            font-size: 28px;
+            color: var(--title-base);
+            text-shadow:
+                0 0 6px rgba(0,0,0,0.6),
+                0 0 12px rgba(0,0,0,0.4),
+                0 0 10px var(--title-accent);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             text-align: center;
+            background: rgba(255,255,255,0.88);
+            border-radius: 8px;
+            overflow: hidden;
         }
-        th, td {
+
+        thead th, tbody td {
             padding: 8px;
             border-bottom: 1px solid #ccc;
             font-size: 14px;
+            color: #222;
         }
-        th {
-            background-color: #eee;
-        }
-        .error {
-            color: red;
-            margin-top: 10px;
-        }
+
         .header-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .clear-button {
-            display: inline-block;
-        }
-        .dark-mode {
-            background-color: #1e1e1e;
-            color: #ccc;
-        }
-        .dark-mode th {
-            background-color: #333;
-            color: #ffcc00;
-        }
-        .dark-mode td {
-            border-bottom: 1px solid #555;
-        }
+
         .toggle-button {
             background: none;
-            border: none;
-            font-size: 18px;
+            border: 1px solid #555;
+            border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
             color: inherit;
+            padding: 6px 10px;
         }
-        input[type="password"] {
-            padding: 6px;
-            font-size: 14px;
-        }
-        #clearModal {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -30%);
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    z-index: 1000;
-}
-#modalOverlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-}
 
+        /* Dark mode overrides */
+        .dark-mode {
+            color: #ddd;
+        }
+        .dark-mode h2 {
+            color: var(--title-base);
+            text-shadow:
+                0 0 6px rgba(0,0,0,0.7),
+                0 0 12px rgba(0,0,0,0.5),
+                0 0 12px var(--title-accent);
+        }
+        .dark-mode table {
+            background: var(--table-dark-bg);
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .dark-mode thead th {
+            background-color: rgba(30,30,30,0.85);
+            color: #ffcc00;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .dark-mode tbody td {
+            color: var(--table-dark-text);
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+        }
+        nav svg {
+            width: 24px;
+            height: 24px;
+            fill: #ffcc00;
+            margin-bottom: 4px;
+        }
+
+        /* Clear modal */
+        #clearModal {
+            display: none;
+            margin-top: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        #clearModal form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #clearModal button {
+            background: #222;
+            color: #eee;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-<div class="header-controls">
-    <!-- 🌑 Dark Mode Toggle -->
-    <button class="toggle-button" onclick="toggleDarkMode()" id="modeToggle" title="Toggle dark mode">🌙</button>
 
-    <!-- 🔐 Clear Button -->
-    <button class="toggle-button" onclick="openClearModal()" title="Clear history">🗑️ Clear History</button>
+<div class="header-controls">
+    <button class="toggle-button" onclick="toggleDarkMode()" id="modeToggle" title="Toggle dark mode">🌙</button>
+    <button class="toggle-button" onclick="openClearModal()" title="Clear sensor logs">🗑️ Clear Sensor Logs</button>
+</div>
+
+<!-- Clear modal ABOVE the table -->
+<div id="clearModal" style="display: none; position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
+     background: rgba(0,0,0,0.85); padding: 20px; border-radius: 8px; z-index: 9999;">
+    <form th:action="@{/history/sensors/clear}" method="post">
+        <input type="password" name="password" placeholder="Enter password to clear sensor logs" required
+               style="padding:8px; font-size:14px; margin-right:10px;" />
+        <button type="submit" style="background:#c00; color:#fff; border:none; padding:8px 16px; border-radius:4px;">Confirm Clear</button>
+        <button type="button" onclick="closeClearModal()" style="background:#555; color:#fff; border:none; padding:8px 16px; border-radius:4px;">Cancel</button>
+    </form>
 </div>
 
 <h2>📜 Sensor Log History</h2>
 
-<div th:if="${errorMessage}" class="error">
-    <p th:text="${errorMessage}"></p>
-</div>
-
 <table>
     <thead>
     <tr>
-        <th>#</th>
-        <th>Date / Time</th>
-        <th>Air Temp (°C)</th>
-        <th>Air Hum (%)</th>
-        <th>CO₂ (ppm)</th>
-        <th>Water Temp (°C)</th>
-        <th>pH</th>
-        <th>EC (µS/cm)</th>
-        <th>Power (W)</th>
+        <th>#</th><th>Date / Time</th><th>External Air Temp (°C)</th>
+        <th>Internal Air Temp (°C)</th><th>Air Hum (%)</th><th>CO₂ (ppm)</th>
+        <th>Water Temp (°C)</th><th>pH</th><th>EC (µS/cm)</th><th>Power (W)</th>
     </tr>
     </thead>
-    <tbody>
+    <tbody id="logsTableBody">
     <tr th:each="log : ${logs}">
-        <td th:text="${log.messageNumber}">--</td>
-        <td th:text="${#temporals.format(log.timestamp, 'dd MMM yyyy HH:mm:ss')}">--</td>
-        <td th:text="${log.airTemp}">--</td>
-        <td th:text="${log.airHum}">--</td>
-        <td th:text="${log.CO2ppm}">--</td>
-        <td th:text="${log.waterTemp}">--</td>
-        <td th:text="${log.waterPH}">--</td>
-        <td th:text="${log.waterEC}">--</td>
-        <td th:text="${log.powerUse}">--</td>
+        <td th:text="${log.messageNumber}"></td>
+        <td th:text="${#temporals.format(log.timestamp, 'dd MMM yyyy HH:mm:ss')}"></td>
+        <td th:text="${log.externalAirTemp}"></td>
+        <td th:text="${log.airTemp}"></td>
+        <td th:text="${log.airHum}"></td>
+        <td th:text="${log.CO2ppm}"></td>
+        <td th:text="${log.waterTemp}"></td>
+        <td th:text="${log.waterPH}"></td>
+        <td th:text="${log.waterEC}"></td>
+        <td th:text="${log.powerUse}"></td>
     </tr>
     </tbody>
+
 </table>
 
-<!-- 🔐 Clear Modal Overlay -->
-<div id="modalOverlay" style="display:none;"></div>
-
-<!-- 🔐 Clear Modal -->
-<div id="clearModal" style="display: none; margin-top: 20px;">
-    <form th:action="@{/history/sensors/clear}" method="post">
-        <input type="password" name="password" placeholder="Enter password to clear logs" required />
-        <button type="submit">Confirm Clear</button>
-        <button type="button" onclick="closeClearModal()">Cancel</button>
-    </form>
-</div>
+<nav>
+    <a href="/dashboard">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+    </a>
+    <a href="/welcome">
+        <svg viewBox="0 0 24 24"><path d="M12 3l9 9h-3v9h-12v-9h-3l9-9z"/></svg>
+        Home
+    </a>
+    <a href="/settings">
+        <svg viewBox="0 0 24 24">
+            <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.62l-1.92-3.32c-.11-.21-.35-.3-.57-.22l-2.39.96a7.007 7.007 0 0 0-1.62-.94l-.36-2.54A.488.488 0 0 0 14 2h-4c-.24 0-.44.17-.48.41l-.36 2.54c-.59.23-1.13.54-1.62.94l-2.39-.96c-.22-.09-.46.01-.57.22l-1.92 3.32c-.11.21-.06.48.12.62l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.62l1.92 3.32c.11.21.35.3.57.22l2.39-.96c.49.4 1.03.71 1.62.94l.36 2.54c.04.24.24.41.48.41h4c.24 0 .44-.17.48-.41l.36-2.54c.59-.23 1.13-.54 1.62-.94l2.39.96c.22.09.46-.01.57-.22l1.92-3.32c.11-.21.06-.48-.12-.62l-2.03-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+        </svg>
+        Settings
+    </a>
+</nav>
 
 <script>
 function toggleDarkMode() {
@@ -145,12 +208,12 @@ function toggleDarkMode() {
 
 function openClearModal() {
     document.getElementById('clearModal').style.display = 'block';
-    document.getElementById('modalOverlay').style.display = 'block';
 }
+
 function closeClearModal() {
     document.getElementById('clearModal').style.display = 'none';
-    document.getElementById('modalOverlay').style.display = 'none';
 }
 </script>
+
 </body>
 </html>

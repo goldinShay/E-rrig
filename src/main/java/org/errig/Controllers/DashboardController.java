@@ -2,12 +2,14 @@ package org.errig.Controllers;
 
 import jakarta.validation.Valid;
 import org.errig.Entities.Actuators.LEDLight;
-import org.errig.Entities.Actuators.SensorLog;
-import org.errig.Entities.Actuators.SystemState;
+import org.errig.Entities.Sensors.SensorLog;
+import org.errig.Entities.SystemState;
 import org.errig.Repositories.LEDLightRepository;
 import org.errig.Repositories.SensorLogRepository;
 import org.errig.Repositories.SystemStateRepository;
 import org.errig.Services.SystemStateService;
+import org.errig.Utilities.SensorLogUtils;
+import org.errig.cycles.CycleManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +17,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class DashboardController {
@@ -28,16 +32,28 @@ public class DashboardController {
     private SensorLogRepository sensorLogRepository;
     @Autowired
     private LEDLightRepository ledLightRepository;
+    @Autowired
+    private CycleManager cycleManager;
+
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         try {
-            systemStateService.simulatePowerUse();
-            SystemState state = systemStateService.getLatestState();
-            model.addAttribute("state", state);
-
+            // ✅ Latest sensor snapshot
             SensorLog latestLog = sensorLogRepository.findTopByOrderByTimestampDesc();
-            model.addAttribute("latestLog", latestLog);
+            if (latestLog != null) {
+                SensorLogUtils.sanitize(latestLog);
+                model.addAttribute("latestLog", latestLog);
+            }
+
+            // ✅ All LED lights (actuators)
+            List<LEDLight> ledLights = ledLightRepository.findAll();
+            model.addAttribute("ledLights", ledLights);
+
+            // ✅ Current system cycle state (hydrated)
+            SystemState state = systemStateService.getLatestState();
+            cycleManager.applyCycleProfile(state, false);
+            model.addAttribute("state", state);
 
             return "dashboard";
         } catch (Exception e) {
@@ -46,7 +62,6 @@ public class DashboardController {
             return "error";
         }
     }
-
 
     @PostMapping("/dashboard/update")
     public String updateState(@Valid @ModelAttribute SystemState state, BindingResult result, Model model) {

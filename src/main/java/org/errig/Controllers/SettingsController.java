@@ -1,6 +1,6 @@
 package org.errig.Controllers;
 
-import org.errig.Entities.Actuators.SystemState;
+import org.errig.Entities.SystemState;
 import org.errig.Services.SystemStateService;
 import org.errig.cycles.CycleManager;
 import org.springframework.beans.factory.annotation.Autowired;
